@@ -39,5 +39,5 @@ export class CreateGrantDto extends CreateDto<CreateGrantDto> {
   @IsOptional()
   @Type(() => CreateTimeDto)
   @ValidateNested({ each: true })
-  time?: CreateTimeDto[];
+  times?: CreateTimeDto[];
 }

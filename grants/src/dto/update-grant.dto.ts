@@ -33,5 +33,5 @@ export class UpdateGrantDto extends UpdateDto<UpdateGrantDto> {
   @IsOptional()
   @Type(() => UpdateTimeDto)
   @ValidateNested({ each: true })
-  time?: UpdateTimeDto[];
+  times?: UpdateTimeDto[];
 }

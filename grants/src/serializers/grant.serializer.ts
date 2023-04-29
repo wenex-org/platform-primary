@@ -1,10 +1,10 @@
+import { Exclude, Expose, Type } from 'class-transformer';
 import { Action, Resource } from '@app/common/enums';
 import { Serializer } from '@app/common/serializers';
 import { ConvertModel } from '@app/common/utils';
-import { Exclude, Expose, Type } from 'class-transformer';
 
-import type { GrantDocument } from '../schemas';
-import { GrantTime } from '../schemas/grant-time.schema';
+import { TimeSerializer } from './time.serializer';
+import type { Grant } from '../schemas';
 
 @Exclude()
 export class GrantSerializer extends Serializer<GrantSerializer> {
@@ -27,10 +27,13 @@ export class GrantSerializer extends Serializer<GrantSerializer> {
   location?: string[];
 
   @Expose()
-  @Type(() => GrantTime)
-  time?: GrantTime[];
+  @Type(() => TimeSerializer)
+  times?: TimeSerializer[];
 
-  static build(data: GrantDocument): GrantSerializer {
+  static build(data: Grant): GrantSerializer {
+    if (data.times?.length)
+      data.times = data.times.map((time) => TimeSerializer.build(time));
+
     return new GrantSerializer(ConvertModel(data));
   }
 }

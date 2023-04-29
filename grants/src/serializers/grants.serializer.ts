@@ -1,20 +1,11 @@
-import { ConvertModel } from '@app/common/utils';
-import { Exclude, Expose, Type } from 'class-transformer';
+import { ArraySerializer } from '@app/common/serializers';
+import { Exclude } from 'class-transformer';
 
-import type { GrantDocument } from '../schemas';
 import { GrantSerializer } from './grant.serializer';
 
 @Exclude()
-export class GrantsSerializer {
-  @Expose()
-  @Type(() => GrantSerializer)
-  items: GrantSerializer[];
-
-  static build({ items }: { items: GrantDocument[] }): GrantsSerializer {
-    return new GrantsSerializer({ items: items.map((item) => GrantSerializer.build(ConvertModel(item))) });
-  }
-
-  constructor(data?: GrantsSerializer) {
-    if (data) Object.assign(this, data);
+export class GrantsSerializer extends ArraySerializer<GrantSerializer> {
+  static build(items: GrantSerializer[]): GrantsSerializer {
+    return new GrantsSerializer({ items });
   }
 }

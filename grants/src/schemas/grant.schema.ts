@@ -3,7 +3,7 @@ import { Action, Resource } from '@app/common/enums';
 import { Schema } from '@app/common/schemas';
 import type { Document } from 'mongoose';
 
-import { GrantTime } from './grant-time.schema';
+import { Time } from './time.schema';
 
 export class Grant extends Schema<Grant> {
   @Prop({ type: String, required: true })
@@ -24,8 +24,8 @@ export class Grant extends Schema<Grant> {
   @Prop({ type: [String], required: false })
   location?: string[];
 
-  @Prop({ type: [GrantTime], required: false })
-  time?: GrantTime[];
+  @Prop({ type: [Time], required: false })
+  times?: Time[];
 }
 
 export type GrantDocument = Document & Grant;

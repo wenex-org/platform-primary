@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Module } from '@nestjs/common';
 
 import { GrantsController } from './grants.controller';
+import { GrantsRepository } from './grants.repository';
 import { GrantsService } from './grants.service';
 import { Grant, GrantSchema } from './schemas';
 
@@ -12,6 +13,6 @@ import { Grant, GrantSchema } from './schemas';
     MongooseModule.forFeature([{ name: Grant.name, schema: GrantSchema }]),
   ],
   controllers: [GrantsController],
-  providers: [GrantsService],
+  providers: [GrantsService, GrantsRepository],
 })
 export class GrantsModule {}

@@ -1,6 +1,7 @@
 import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { CreateSubDto } from '@app/common/dto';
 
-export class CreateTimeDto {
+export class CreateTimeDto extends CreateSubDto<CreateTimeDto> {
   @IsString()
   @IsNotEmpty()
   cron_exp: string;
@@ -8,8 +9,4 @@ export class CreateTimeDto {
   @IsNumber()
   @IsNotEmpty()
   duration: number;
-
-  constructor(data?: Partial<CreateTimeDto>) {
-    if (data) Object.assign(this, data);
-  }
 }

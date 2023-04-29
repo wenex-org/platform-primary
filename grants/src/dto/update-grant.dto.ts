@@ -1,7 +1,7 @@
-import { UpdateDto } from '@app/common/dto';
-import { Action, Resource } from '@app/common/enums';
-import { Type } from 'class-transformer';
 import { IsEnum, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { Action, Resource } from '@app/common/enums';
+import { UpdateDto } from '@app/common/dto';
+import { Type } from 'class-transformer';
 
 import { UpdateTimeDto } from './update-time.dto';
 

@@ -1,6 +1,3 @@
-import { CreateDto } from '@app/common/dto';
-import { Action, Resource } from '@app/common/enums';
-import { Type } from 'class-transformer';
 import {
   IsEnum,
   IsNotEmpty,
@@ -8,6 +5,9 @@ import {
   IsString,
   ValidateNested,
 } from 'class-validator';
+import { Action, Resource } from '@app/common/enums';
+import { CreateDto } from '@app/common/dto';
+import { Type } from 'class-transformer';
 
 import { CreateTimeDto } from './create-time.dto';
 

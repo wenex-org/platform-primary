@@ -3,7 +3,11 @@ import {
   GrpcService,
   GrpcStreamMethod,
 } from '@nestjs/microservices';
-import { ClassSerializerInterceptor, UseInterceptors } from '@nestjs/common';
+import {
+  ClassSerializerInterceptor,
+  Controller,
+  UseInterceptors,
+} from '@nestjs/common';
 import { CountFilterDto, FilterDto, OneFilterDto } from '@app/common/dto';
 import { CountSerializer } from '@app/common/serializers';
 import { Observable, Subject, from } from 'rxjs';
@@ -12,17 +16,17 @@ import { CreateGrantDto, UpdateGrantBulkDto, UpdateGrantOneDto } from './dto';
 import { GrantSerializer, GrantsSerializer } from './serializers';
 import { GrantsService } from './grants.service';
 
-@GrpcService()
+@Controller()
 @UseInterceptors(ClassSerializerInterceptor)
 export class GrantsController {
   constructor(private readonly service: GrantsService) {}
 
-  @GrpcMethod()
+  @GrpcMethod(GrantsService.name)
   async count(data: CountFilterDto): Promise<CountSerializer> {
     return CountSerializer.build(await this.service.count(data));
   }
 
-  @GrpcMethod()
+  @GrpcMethod(GrantsService.name)
   async create(data: CreateGrantDto): Promise<GrantSerializer> {
     return GrantSerializer.build(await this.service.create(data));
   }
@@ -39,39 +43,39 @@ export class GrantsController {
     return subject.asObservable();
   }
 
-  @GrpcMethod()
+  @GrpcMethod(GrantsService.name)
   async findOne(data: OneFilterDto): Promise<GrantSerializer> {
     return GrantSerializer.build(await this.service.findOne(data));
   }
 
-  @GrpcMethod()
+  @GrpcMethod(GrantsService.name)
   async findMany(data: FilterDto): Promise<GrantsSerializer> {
     return GrantsSerializer.build(await this.service.findMany(data));
   }
 
-  @GrpcMethod()
+  @GrpcMethod(GrantsService.name)
   async findById(data: OneFilterDto): Promise<GrantSerializer> {
     return GrantSerializer.build(await this.service.findById(data));
   }
 
-  @GrpcMethod()
+  @GrpcMethod(GrantsService.name)
   async deleteById(data: OneFilterDto): Promise<GrantSerializer> {
     return GrantSerializer.build(await this.service.deleteById(data));
   }
 
-  @GrpcMethod()
+  @GrpcMethod(GrantsService.name)
   async restoreById(data: OneFilterDto): Promise<GrantSerializer> {
     return GrantSerializer.build(await this.service.restoreById(data));
   }
 
-  @GrpcMethod()
+  @GrpcMethod(GrantsService.name)
   async updateById(data: UpdateGrantOneDto): Promise<GrantSerializer> {
     return GrantSerializer.build(
       await this.service.updateById(data.filter, data.update),
     );
   }
 
-  @GrpcMethod()
+  @GrpcMethod(GrantsService.name)
   async updateBulk(data: UpdateGrantBulkDto): Promise<CountSerializer> {
     return CountSerializer.build(
       await this.service.updateBulk(data.filter, data.update),

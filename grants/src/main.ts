@@ -39,6 +39,6 @@ async function bootstrap() {
   const url = await app.getUrl();
   console.log(`Prometheus is running on ${url}/metrics`);
   console.log(`Health check is running on ${url}/status`);
-  console.log(`Grants gRPC Micro Successfully Started on ${rpcUrl}`);
+  console.log(`Grants RPC Micro Successfully Started on ${rpcUrl}`);
 }
 bootstrap();

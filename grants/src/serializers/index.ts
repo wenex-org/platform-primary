@@ -1,4 +1,5 @@
-export * from './grant.serializer';
-export * from './grants.serializer';
-
-export * from './time.serializer';
+export {
+  GrantSerializer,
+  GrantsSerializer,
+  TimeSerializer,
+} from '@app/common/serializers';

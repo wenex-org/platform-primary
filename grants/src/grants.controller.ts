@@ -1,14 +1,15 @@
 import {
+  ClassSerializerInterceptor,
+  UseFilters,
+  UseInterceptors,
+} from '@nestjs/common';
+import {
   GrpcMethod,
   GrpcService,
   GrpcStreamMethod,
 } from '@nestjs/microservices';
-import {
-  ClassSerializerInterceptor,
-  Controller,
-  UseInterceptors,
-} from '@nestjs/common';
 import { CountFilterDto, FilterDto, OneFilterDto } from '@app/common/dto';
+import { AllExceptionsFilter } from '@app/common/filters';
 import { CountSerializer } from '@app/common/serializers';
 import { Observable, Subject, from } from 'rxjs';
 
@@ -16,7 +17,8 @@ import { CreateGrantDto, UpdateGrantBulkDto, UpdateGrantOneDto } from './dto';
 import { GrantSerializer, GrantsSerializer } from './serializers';
 import { GrantsService } from './grants.service';
 
-@Controller()
+@GrpcService()
+@UseFilters(AllExceptionsFilter)
 @UseInterceptors(ClassSerializerInterceptor)
 export class GrantsController {
   constructor(private readonly service: GrantsService) {}
@@ -31,7 +33,7 @@ export class GrantsController {
     return GrantSerializer.build(await this.service.create(data));
   }
 
-  @GrpcStreamMethod()
+  @GrpcStreamMethod(GrantsService.name)
   cursor(data: OneFilterDto): Observable<GrantSerializer> {
     const subject = new Subject<GrantSerializer>();
 

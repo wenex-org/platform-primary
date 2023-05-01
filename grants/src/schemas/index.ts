@@ -1,2 +1,1 @@
-export * from './grant.schema';
-export * from './time.schema';
+export { Grant, GrantSchema, GrantDocument, Time } from '@app/common/schemas';

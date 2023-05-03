@@ -15,6 +15,7 @@ import { Observable, Subject, from } from 'rxjs';
 
 import { CreateGrantDto, UpdateGrantBulkDto, UpdateGrantOneDto } from './dto';
 import { GrantSerializer, GrantsSerializer } from './serializers';
+import { TransformInterceptor } from '@app/common/interceptors';
 import { GrantsService } from './grants.service';
 
 @GrpcService()
@@ -24,6 +25,7 @@ export class GrantsController {
   constructor(private readonly service: GrantsService) {}
 
   @GrpcMethod(GrantsService.name)
+  @UseInterceptors(TransformInterceptor)
   async count(data: CountFilterDto): Promise<CountSerializer> {
     return CountSerializer.build(await this.service.count(data));
   }
@@ -34,6 +36,7 @@ export class GrantsController {
   }
 
   @GrpcStreamMethod(GrantsService.name)
+  @UseInterceptors(TransformInterceptor)
   cursor(data: OneFilterDto): Observable<GrantSerializer> {
     const subject = new Subject<GrantSerializer>();
 
@@ -46,31 +49,37 @@ export class GrantsController {
   }
 
   @GrpcMethod(GrantsService.name)
+  @UseInterceptors(TransformInterceptor)
   async findOne(data: OneFilterDto): Promise<GrantSerializer> {
     return GrantSerializer.build(await this.service.findOne(data));
   }
 
   @GrpcMethod(GrantsService.name)
+  @UseInterceptors(TransformInterceptor)
   async findMany(data: FilterDto): Promise<GrantsSerializer> {
     return GrantsSerializer.build(await this.service.findMany(data));
   }
 
   @GrpcMethod(GrantsService.name)
+  @UseInterceptors(TransformInterceptor)
   async findById(data: OneFilterDto): Promise<GrantSerializer> {
     return GrantSerializer.build(await this.service.findById(data));
   }
 
   @GrpcMethod(GrantsService.name)
+  @UseInterceptors(TransformInterceptor)
   async deleteById(data: OneFilterDto): Promise<GrantSerializer> {
     return GrantSerializer.build(await this.service.deleteById(data));
   }
 
   @GrpcMethod(GrantsService.name)
+  @UseInterceptors(TransformInterceptor)
   async restoreById(data: OneFilterDto): Promise<GrantSerializer> {
     return GrantSerializer.build(await this.service.restoreById(data));
   }
 
   @GrpcMethod(GrantsService.name)
+  @UseInterceptors(TransformInterceptor)
   async updateById(data: UpdateGrantOneDto): Promise<GrantSerializer> {
     return GrantSerializer.build(
       await this.service.updateById(data.filter, data.update),
@@ -78,6 +87,7 @@ export class GrantsController {
   }
 
   @GrpcMethod(GrantsService.name)
+  @UseInterceptors(TransformInterceptor)
   async updateBulk(data: UpdateGrantBulkDto): Promise<CountSerializer> {
     return CountSerializer.build(
       await this.service.updateBulk(data.filter, data.update),

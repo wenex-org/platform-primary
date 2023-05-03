@@ -13,7 +13,7 @@ import { join } from 'path';
 
 import { GrantsModule } from './grants.module';
 
-if (!NODE_ENV().IS_DEVELOPMENT) initTracing();
+if (!NODE_ENV().IS_DEVELOPMENT) initTracing(['http', 'grpc']);
 
 async function bootstrap() {
   const app = await NestFactory.create(GrantsModule, { cors: true });

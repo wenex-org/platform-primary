@@ -1,43 +1,40 @@
 import {
+  Body,
   ClassSerializerInterceptor,
   UseFilters,
   UseInterceptors,
+  UsePipes,
 } from '@nestjs/common';
-import {
-  GrpcMethod,
-  GrpcService,
-  GrpcStreamMethod,
-} from '@nestjs/microservices';
 import { CountFilterDto, FilterDto, OneFilterDto } from '@app/common/dto';
+import { GrpcMethod, GrpcService } from '@nestjs/microservices';
 import { AllExceptionsFilter } from '@app/common/filters';
 import { CountSerializer } from '@app/common/serializers';
+import { ValidationPipe } from '@app/common/pipes';
 import { Observable, Subject, from } from 'rxjs';
 
 import { CreateGrantDto, UpdateGrantBulkDto, UpdateGrantOneDto } from './dto';
 import { GrantSerializer, GrantsSerializer } from './serializers';
-import { TransformInterceptor } from '@app/common/interceptors';
 import { GrantsService } from './grants.service';
 
 @GrpcService()
+@UsePipes(ValidationPipe)
 @UseFilters(AllExceptionsFilter)
 @UseInterceptors(ClassSerializerInterceptor)
 export class GrantsController {
   constructor(private readonly service: GrantsService) {}
 
   @GrpcMethod(GrantsService.name)
-  @UseInterceptors(TransformInterceptor)
-  async count(data: CountFilterDto): Promise<CountSerializer> {
+  async count(@Body() data: CountFilterDto): Promise<CountSerializer> {
     return CountSerializer.build(await this.service.count(data));
   }
 
   @GrpcMethod(GrantsService.name)
-  async create(data: CreateGrantDto): Promise<GrantSerializer> {
+  async create(@Body() data: CreateGrantDto): Promise<GrantSerializer> {
     return GrantSerializer.build(await this.service.create(data));
   }
 
-  @GrpcStreamMethod(GrantsService.name)
-  @UseInterceptors(TransformInterceptor)
-  cursor(data: OneFilterDto): Observable<GrantSerializer> {
+  @GrpcMethod(GrantsService.name)
+  cursor(@Body() data: OneFilterDto): Observable<GrantSerializer> {
     const subject = new Subject<GrantSerializer>();
 
     from(this.service.cursor(data)).subscribe({
@@ -49,46 +46,39 @@ export class GrantsController {
   }
 
   @GrpcMethod(GrantsService.name)
-  @UseInterceptors(TransformInterceptor)
-  async findOne(data: OneFilterDto): Promise<GrantSerializer> {
+  async findOne(@Body() data: OneFilterDto): Promise<GrantSerializer> {
     return GrantSerializer.build(await this.service.findOne(data));
   }
 
   @GrpcMethod(GrantsService.name)
-  @UseInterceptors(TransformInterceptor)
-  async findMany(data: FilterDto): Promise<GrantsSerializer> {
+  async findMany(@Body() data: FilterDto): Promise<GrantsSerializer> {
     return GrantsSerializer.build(await this.service.findMany(data));
   }
 
   @GrpcMethod(GrantsService.name)
-  @UseInterceptors(TransformInterceptor)
-  async findById(data: OneFilterDto): Promise<GrantSerializer> {
+  async findById(@Body() data: OneFilterDto): Promise<GrantSerializer> {
     return GrantSerializer.build(await this.service.findById(data));
   }
 
   @GrpcMethod(GrantsService.name)
-  @UseInterceptors(TransformInterceptor)
-  async deleteById(data: OneFilterDto): Promise<GrantSerializer> {
+  async deleteById(@Body() data: OneFilterDto): Promise<GrantSerializer> {
     return GrantSerializer.build(await this.service.deleteById(data));
   }
 
   @GrpcMethod(GrantsService.name)
-  @UseInterceptors(TransformInterceptor)
-  async restoreById(data: OneFilterDto): Promise<GrantSerializer> {
+  async restoreById(@Body() data: OneFilterDto): Promise<GrantSerializer> {
     return GrantSerializer.build(await this.service.restoreById(data));
   }
 
   @GrpcMethod(GrantsService.name)
-  @UseInterceptors(TransformInterceptor)
-  async updateById(data: UpdateGrantOneDto): Promise<GrantSerializer> {
+  async updateById(@Body() data: UpdateGrantOneDto): Promise<GrantSerializer> {
     return GrantSerializer.build(
       await this.service.updateById(data.filter, data.update),
     );
   }
 
   @GrpcMethod(GrantsService.name)
-  @UseInterceptors(TransformInterceptor)
-  async updateBulk(data: UpdateGrantBulkDto): Promise<CountSerializer> {
+  async updateBulk(@Body() data: UpdateGrantBulkDto): Promise<CountSerializer> {
     return CountSerializer.build(
       await this.service.updateBulk(data.filter, data.update),
     );

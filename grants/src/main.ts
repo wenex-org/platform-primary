@@ -4,7 +4,6 @@ require('log-node')();
 
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { SentryInterceptor } from '@ntegral/nestjs-sentry';
-import { ValidationPipe } from '@nestjs/common';
 import { NODE_ENV } from '@app/common/configs';
 import { NestFactory } from '@nestjs/core';
 import { APP } from '@app/common/consts';
@@ -21,7 +20,7 @@ async function bootstrap() {
   app.useGlobalInterceptors(new SentryInterceptor());
 
   const rpcUrl = `0.0.0.0:${APP.GRANTS.GRPC_PORT}`;
-  const micro = app.connectMicroservice<MicroserviceOptions>({
+  app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.GRPC,
     options: {
       url: rpcUrl,
@@ -30,8 +29,6 @@ async function bootstrap() {
       protoPath: join(__dirname, 'grants.proto'),
     },
   });
-
-  micro.useGlobalPipes(new ValidationPipe({ transform: true }));
 
   await app.startAllMicroservices();
   await app.listen(APP.GRANTS.API_PORT);

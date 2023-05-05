@@ -34,7 +34,7 @@ export class GrantsController {
   }
 
   @GrpcMethod(GrantsService.name)
-  cursor(@Body() data: OneFilterDto): Observable<GrantSerializer> {
+  cursor(@Body() data: FilterDto): Observable<GrantSerializer> {
     const subject = new Subject<GrantSerializer>();
 
     from(this.service.cursor(data)).subscribe({

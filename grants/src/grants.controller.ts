@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { CountFilterDto, FilterDto, OneFilterDto } from '@app/common/dto';
 import { GrpcMethod, GrpcService } from '@nestjs/microservices';
+import { SentryInterceptor } from '@ntegral/nestjs-sentry';
 import { AllExceptionsFilter } from '@app/common/filters';
 import { CountSerializer } from '@app/common/serializers';
 import { ValidationPipe } from '@app/common/pipes';
@@ -14,7 +15,6 @@ import { Observable, Subject, from } from 'rxjs';
 
 import { CreateGrantDto, UpdateGrantBulkDto, UpdateGrantOneDto } from './dto';
 import { GrantSerializer, GrantsSerializer } from './serializers';
-import { SentryInterceptor } from '@ntegral/nestjs-sentry';
 import { GrantsService } from './grants.service';
 
 @GrpcService()

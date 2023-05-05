@@ -3,7 +3,6 @@ require('dotenv').config();
 require('log-node')();
 
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import { SentryInterceptor } from '@ntegral/nestjs-sentry';
 import { NODE_ENV } from '@app/common/configs';
 import { NestFactory } from '@nestjs/core';
 import { APP } from '@app/common/consts';
@@ -16,8 +15,6 @@ if (!NODE_ENV().IS_DEVELOPMENT) initTracing(['http', 'grpc']);
 
 async function bootstrap() {
   const app = await NestFactory.create(GrantsModule, { cors: true });
-
-  app.useGlobalInterceptors(new SentryInterceptor());
 
   const rpcUrl = `0.0.0.0:${APP.GRANTS.GRPC_PORT}`;
   app.connectMicroservice<MicroserviceOptions>({

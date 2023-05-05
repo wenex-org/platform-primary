@@ -14,12 +14,16 @@ import { Observable, Subject, from } from 'rxjs';
 
 import { CreateGrantDto, UpdateGrantBulkDto, UpdateGrantOneDto } from './dto';
 import { GrantSerializer, GrantsSerializer } from './serializers';
+import { SentryInterceptor } from '@ntegral/nestjs-sentry';
 import { GrantsService } from './grants.service';
 
 @GrpcService()
 @UsePipes(ValidationPipe)
 @UseFilters(AllExceptionsFilter)
-@UseInterceptors(ClassSerializerInterceptor)
+@UseInterceptors(
+  ClassSerializerInterceptor,
+  new SentryInterceptor({ version: true }),
+)
 export class GrantsController {
   constructor(private readonly service: GrantsService) {}
 

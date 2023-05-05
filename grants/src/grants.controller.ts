@@ -38,8 +38,8 @@ export class GrantsController {
     const subject = new Subject<GrantSerializer>();
 
     from(this.service.cursor(data)).subscribe({
-      next: (val) => subject.next(GrantSerializer.build(val)),
       complete: () => subject.complete(),
+      next: (value) => subject.next(GrantSerializer.build(value)),
     });
 
     return subject.asObservable();

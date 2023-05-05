@@ -11,9 +11,9 @@ import { join } from 'path';
 
 import { GrantsModule } from './grants.module';
 
-if (NODE_ENV().IS_PRODUCTION) initTracing(['http', 'grpc']);
-
 async function bootstrap() {
+  if (NODE_ENV().IS_PRODUCTION) await initTracing(['http', 'grpc']);
+
   const app = await NestFactory.create(GrantsModule, { cors: true });
 
   const rpcUrl = `0.0.0.0:${APP.GRANTS.GRPC_PORT}`;

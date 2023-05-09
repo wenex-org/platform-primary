@@ -11,24 +11,28 @@ import { join } from 'path';
 
 import { UsersModule } from './users.module';
 
+const {
+  IDENTITY: { USERS },
+} = APP;
+
 async function bootstrap() {
   if (NODE_ENV().IS_PRODUCTION) await initTracing(['http', 'grpc']);
 
   const app = await NestFactory.create(UsersModule, { cors: true });
 
-  const rpcUrl = `0.0.0.0:${APP.IDENTITY.USERS.GRPC_PORT}`;
+  const rpcUrl = `0.0.0.0:${USERS.GRPC_PORT}`;
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.GRPC,
     options: {
       url: rpcUrl,
-      package: 'users',
       loader: { keepCase: true },
+      package: USERS.PACKAGE.NAME,
       protoPath: join(__dirname, 'users.proto'),
     },
   });
 
   await app.startAllMicroservices();
-  await app.listen(APP.IDENTITY.USERS.API_PORT);
+  await app.listen(USERS.API_PORT);
 
   const url = await app.getUrl();
   console.log(`Prometheus is running on ${url}/metrics`);

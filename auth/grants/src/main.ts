@@ -16,7 +16,7 @@ async function bootstrap() {
 
   const app = await NestFactory.create(GrantsModule, { cors: true });
 
-  const rpcUrl = `0.0.0.0:${APP.GRANTS.GRPC_PORT}`;
+  const rpcUrl = `0.0.0.0:${APP.AUTH.GRANTS.GRPC_PORT}`;
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.GRPC,
     options: {
@@ -28,7 +28,7 @@ async function bootstrap() {
   });
 
   await app.startAllMicroservices();
-  await app.listen(APP.GRANTS.API_PORT);
+  await app.listen(APP.AUTH.GRANTS.API_PORT);
 
   const url = await app.getUrl();
   console.log(`Prometheus is running on ${url}/metrics`);

@@ -4,6 +4,7 @@ import {
   JwtToken,
 } from '@app/common/interfaces';
 import { Injectable } from '@nestjs/common';
+
 import { AuthenticationProvider } from './authentication.provider';
 
 @Injectable()

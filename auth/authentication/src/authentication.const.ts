@@ -2,8 +2,10 @@ import { ClientsModuleOptions, Transport } from '@nestjs/microservices';
 import { APP } from '@app/common/consts';
 import { join } from 'path';
 
-export const AUTH_CACHE_TOKEN_KEY = 'auth';
-export const AUTH_CACHE_TOKEN_TTL = 15 * 60; // 15 minutes
+const {
+  DOMAIN: { APPS, CLIENTS },
+  IDENTITY: { USERS, SESSIONS },
+} = APP;
 
 export const clientsModuleOptions: ClientsModuleOptions = [
   /**
@@ -11,19 +13,23 @@ export const clientsModuleOptions: ClientsModuleOptions = [
    */
   {
     // App Service
-    name: APP.DOMAIN.APPS.PACKAGE.SYMBOL,
+    name: APPS.PACKAGE.SYMBOL,
     transport: Transport.GRPC,
     options: {
-      package: APP.DOMAIN.APPS.PACKAGE.NAME,
+      loader: { keepCase: true },
+      package: APPS.PACKAGE.NAME,
+      url: `0.0.0.0:${APPS.GRPC_PORT}`,
       protoPath: join(__dirname, 'protos/apps.proto'),
     },
   },
   {
     // Client Service
-    name: APP.DOMAIN.CLIENTS.PACKAGE.SYMBOL,
+    name: CLIENTS.PACKAGE.SYMBOL,
     transport: Transport.GRPC,
     options: {
-      package: APP.DOMAIN.CLIENTS.PACKAGE.NAME,
+      loader: { keepCase: true },
+      package: CLIENTS.PACKAGE.NAME,
+      url: `0.0.0.0:${CLIENTS.GRPC_PORT}`,
       protoPath: join(__dirname, 'protos/clients.proto'),
     },
   },
@@ -31,20 +37,24 @@ export const clientsModuleOptions: ClientsModuleOptions = [
    * Identity Services
    */
   {
-    name: APP.IDENTITY.USERS.PACKAGE.SYMBOL,
+    // User Service
+    name: USERS.PACKAGE.SYMBOL,
     transport: Transport.GRPC,
     options: {
-      // User Service
-      package: APP.IDENTITY.USERS.PACKAGE.NAME,
+      loader: { keepCase: true },
+      package: USERS.PACKAGE.NAME,
+      url: `0.0.0.0:${USERS.GRPC_PORT}`,
       protoPath: join(__dirname, 'protos/users.proto'),
     },
   },
   {
     // Session Service
-    name: APP.IDENTITY.SESSIONS.PACKAGE.SYMBOL,
+    name: SESSIONS.PACKAGE.SYMBOL,
     transport: Transport.GRPC,
     options: {
-      package: APP.IDENTITY.SESSIONS.PACKAGE.NAME,
+      loader: { keepCase: true },
+      package: SESSIONS.PACKAGE.NAME,
+      url: `0.0.0.0:${SESSIONS.GRPC_PORT}`,
       protoPath: join(__dirname, 'protos/sessions.proto'),
     },
   },

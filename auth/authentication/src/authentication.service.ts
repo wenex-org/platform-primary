@@ -10,6 +10,7 @@ import {
 } from '@app/common/interfaces';
 import { Injectable } from '@nestjs/common';
 
+import { AUTH_CACHE_TOKEN_KEY, AUTH_CACHE_TOKEN_TTL } from '@app/common/consts';
 import { isApplicable, isAvailable, toDate } from '@app/common/utils';
 import { GrantType, ResponseType } from '@app/common/enums';
 import { BlacklistedService } from '@app/blacklisted';
@@ -19,12 +20,17 @@ import { RedisService } from '@app/redis';
 import { JwtService } from '@nestjs/jwt';
 import { lastValueFrom } from 'rxjs';
 
-import {
-  AUTH_CACHE_TOKEN_KEY,
-  AUTH_CACHE_TOKEN_TTL,
-} from './authentication.const';
 import { AuthenticationProvider } from './authentication.provider';
-import { AuthToken } from './authentication.type';
+
+export type AuthToken = {
+  token: Omit<JwtToken, 'type' | 'session'>;
+
+  state?: string;
+  redirect_uri?: string;
+
+  access_token_ttl: number;
+  refresh_token_ttl: number;
+};
 
 @Injectable()
 export class AuthenticationService {
@@ -243,7 +249,7 @@ export class AuthenticationService {
     };
 
     const client = await lastValueFrom(
-      this.provider.clientsService.findOne({ query }),
+      this.provider.clientsService.findOne(JSON.stringify({ query }) as any),
     );
 
     if (!client || !isAvailable(client) || !isApplicable(client))

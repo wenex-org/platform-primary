@@ -1,19 +1,30 @@
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
-import { NODE_ENV, SENTRY_DSN } from '@app/common/configs';
+import {
+  JWT_SECRET,
+  NODE_ENV,
+  REDIS_OPTIONS,
+  SENTRY_DSN,
+} from '@app/common/configs';
+import { ClientsModule } from '@nestjs/microservices';
 import { SentryModule } from '@ntegral/nestjs-sentry';
+import { BlacklistedModule } from '@app/blacklisted';
 import { HealthModule } from '@app/health';
+import { RedisModule } from '@app/redis';
+import { JwtModule } from '@nestjs/jwt';
 import { Module } from '@nestjs/common';
 
 import { AuthenticationController } from './authentication.controller';
 import { AuthenticationProvider } from './authentication.provider';
 import { AuthenticationService } from './authentication.service';
 import { clientsModuleOptions } from './authentication.const';
-import { ClientsModule } from '@nestjs/microservices';
 
 @Module({
   imports: [
+    BlacklistedModule,
     PrometheusModule.register(),
+    RedisModule.register(REDIS_OPTIONS()),
     HealthModule.register(['disk', 'memory']),
+    JwtModule.register({ secret: JWT_SECRET() }),
     ClientsModule.register(clientsModuleOptions),
     SentryModule.forRoot({
       debug: NODE_ENV().IS_DEVELOPMENT,

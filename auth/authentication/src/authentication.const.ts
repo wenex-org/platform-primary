@@ -2,6 +2,9 @@ import { ClientsModuleOptions, Transport } from '@nestjs/microservices';
 import { APP } from '@app/common/consts';
 import { join } from 'path';
 
+export const AUTH_CACHE_TOKEN_KEY = 'auth';
+export const AUTH_CACHE_TOKEN_TTL = 15 * 60; // 15 minutes
+
 export const clientsModuleOptions: ClientsModuleOptions = [
   /**
    * Domain Services

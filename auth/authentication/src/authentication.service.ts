@@ -117,7 +117,7 @@ export class AuthenticationService {
       this.provider.usersService.findOne(toRaw({ query })),
     );
 
-    if (!user || !isAvailable(user) || !isApplicable(user))
+    if (!user.id || !isAvailable(user) || !isApplicable(user))
       throw new Error('user is not available or not applicable');
 
     if (Bcrypt.compare(password, user.password))
@@ -249,10 +249,10 @@ export class AuthenticationService {
     };
 
     const client = await lastValueFrom(
-      this.provider.clientsService.findOne(JSON.stringify({ query }) as any),
+      this.provider.clientsService.findOne(toRaw({ query })),
     );
 
-    if (!client || !isAvailable(client) || !isApplicable(client))
+    if (!client.id || !isAvailable(client) || !isApplicable(client))
       throw new Error('client is not available or not applicable');
 
     if (!client.domains.find((d) => d.address === data.domain))
@@ -273,7 +273,7 @@ export class AuthenticationService {
       this.provider.appsService.findOne(toRaw({ query })),
     );
 
-    if (!app || !isAvailable(app) || !isApplicable(app))
+    if (!app.id || !isAvailable(app) || !isApplicable(app))
       throw new Error('application is not available or not applicable');
 
     return app;

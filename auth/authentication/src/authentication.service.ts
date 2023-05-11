@@ -11,7 +11,7 @@ import {
 import { Injectable } from '@nestjs/common';
 
 import { AUTH_CACHE_TOKEN_KEY, AUTH_CACHE_TOKEN_TTL } from '@app/common/consts';
-import { isApplicable, isAvailable, toDate } from '@app/common/utils';
+import { isApplicable, isAvailable, toDate, toRaw } from '@app/common/utils';
 import { GrantType, ResponseType } from '@app/common/enums';
 import { BlacklistedService } from '@app/blacklisted';
 import { Bcrypt, MD5 } from '@app/common/helpers';
@@ -114,7 +114,7 @@ export class AuthenticationService {
     const query: Query<User> = { $or: [{ username }, { email }] };
 
     const user = await lastValueFrom(
-      this.provider.usersService.findOne({ query }),
+      this.provider.usersService.findOne(toRaw({ query })),
     );
 
     if (!user || !isAvailable(user) || !isApplicable(user))
@@ -270,7 +270,7 @@ export class AuthenticationService {
     const query: Query<App> = { _id: data.app_id, cid: client.id };
 
     const app = await lastValueFrom(
-      this.provider.appsService.findOne({ query }),
+      this.provider.appsService.findOne(toRaw({ query })),
     );
 
     if (!app || !isAvailable(app) || !isApplicable(app))

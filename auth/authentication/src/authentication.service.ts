@@ -13,8 +13,9 @@ import { Injectable } from '@nestjs/common';
 import { AUTH_CACHE_TOKEN_KEY, AUTH_CACHE_TOKEN_TTL } from '@app/common/consts';
 import { isApplicable, isAvailable, toDate, toRaw } from '@app/common/utils';
 import { GrantType, ResponseType } from '@app/common/enums';
+import { AES, Bcrypt, MD5 } from '@app/common/helpers';
 import { BlacklistedService } from '@app/blacklisted';
-import { Bcrypt, MD5 } from '@app/common/helpers';
+import { isNotEmptyObject } from 'class-validator';
 import { intersection, uniq } from 'lodash';
 import { RedisService } from '@app/redis';
 import { JwtService } from '@nestjs/jwt';
@@ -46,7 +47,16 @@ export class AuthenticationService {
     if (data.code || data.response_type === ResponseType.Token)
       if (!data.client_secret) throw new Error('client secret is required');
 
+    if (data.roles.length && !data.domain)
+      throw new Error('domain is required when roles is provided');
+
     const client = await this.validateClient(data);
+
+    if (data.domain && data.roles.length) {
+      const domain = client.domains.find((d) => d.address === data.domain);
+
+      data.roles = uniq(intersection(domain.roles, data.roles));
+    }
 
     const app = await this.validateApplication(client, data);
 
@@ -61,6 +71,7 @@ export class AuthenticationService {
     else data.scopes = (app ?? client).scopes;
 
     if (!data.roles?.length) data.roles = ['guest'];
+    if (!data.domain) data.domain = client.domains[0]?.address;
 
     return await this.handler(data, { client, app });
   }
@@ -120,7 +131,7 @@ export class AuthenticationService {
     if (!user.id || !isAvailable(user) || !isApplicable(user))
       throw new Error('user is not available or not applicable');
 
-    if (Bcrypt.compare(password, user.password))
+    if (!Bcrypt.compare(password, user.password))
       throw new Error('password is not correct');
 
     const authToken = await this.authToken(data, { client, user, app });
@@ -136,14 +147,53 @@ export class AuthenticationService {
     data: AuthenticationRequest,
     { client, app }: { client: Client; app: App },
   ): Promise<AuthenticationResponse> {
-    throw new Error('refresh token grant type not implemented');
+    const { refresh_token, client_secret } = data;
+
+    if (!refresh_token) throw new Error('refresh token is required');
+    if (!client_secret) throw new Error('client secret is required');
+
+    const token = this.jwtService.verify<JwtToken>(AES.decrypt(refresh_token));
+
+    if (token.type !== 'refresh') throw new Error('token is not refresh');
+
+    if (token.cid !== client.id || token.client_id !== client.client_id)
+      throw new Error('incompatible client id detected');
+
+    const query: Query<User> = { id: token.uid ?? token.cid };
+
+    const user = await lastValueFrom(
+      this.provider.usersService.findById(toRaw({ query })),
+    );
+
+    const entity = isNotEmptyObject(user) ? user : client;
+
+    if (!isAvailable(entity) || !isApplicable(entity))
+      throw new Error('user is not available or not applicable');
+
+    const authToken = await this.authToken(data, { client, user, app });
+
+    if (data.response_type === ResponseType.Code)
+      return await this.generateCode(authToken);
+    else {
+      return await this.generateToken(authToken);
+    }
   }
 
   async clientCredential(
     data: AuthenticationRequest,
     { client, app }: { client: Client; app: App },
   ): Promise<AuthenticationResponse> {
-    throw new Error('client credential grant type not implemented');
+    const { client_secret } = data;
+
+    if (!client_secret) throw new Error('client secret is required');
+
+    const authToken = await this.authToken(data, { client, app });
+
+    if (data.response_type === ResponseType.Code)
+      return await this.generateCode(authToken);
+    else {
+      return await this.generateToken(authToken);
+    }
   }
 
   async authorizationCode(
@@ -227,14 +277,21 @@ export class AuthenticationService {
     return {
       token_type: 'Bearer',
       session: session.id,
-      expires_in: access_token_ttl,
-      access_token: this.jwtService.sign(access_token, {
-        expiresIn: access_token_ttl,
-      }),
-      refresh_token: this.jwtService.sign(refresh_token, {
-        expiresIn: refresh_token_ttl,
-      }),
       state,
+      domain: token.domain,
+      expires_in: access_token_ttl,
+      role: token.roles.sort().join(' '),
+      scope: token.scopes.sort().join(' '),
+      access_token: AES.encrypt(
+        this.jwtService.sign(access_token, {
+          expiresIn: parseInt(access_token_ttl.toString()),
+        }),
+      ),
+      refresh_token: AES.encrypt(
+        this.jwtService.sign(refresh_token, {
+          expiresIn: parseInt(refresh_token_ttl.toString()),
+        }),
+      ),
     };
   }
 
@@ -242,6 +299,8 @@ export class AuthenticationService {
 
   async validateClient(data: AuthenticationRequest): Promise<Client> {
     const { client_id, client_secret } = data;
+
+    if (!client_id) throw new Error('client id is required');
 
     const query: Query<Client> = {
       client_secret,
@@ -255,7 +314,7 @@ export class AuthenticationService {
     if (!client.id || !isAvailable(client) || !isApplicable(client))
       throw new Error('client is not available or not applicable');
 
-    if (!client.domains.find((d) => d.address === data.domain))
+    if (data.domain && !client.domains.find((d) => d.address === data.domain))
       throw new Error('domain is not belongs to this client');
 
     const expirationDate = toDate(client.expiration_date);

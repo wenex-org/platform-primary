@@ -6,6 +6,7 @@ import {
   Client,
   JwtToken,
   Query,
+  Session,
   User,
 } from '@app/common/interfaces';
 import { Injectable } from '@nestjs/common';
@@ -190,7 +191,7 @@ export class AuthenticationService {
     if (data.response_type === ResponseType.Code)
       return await this.generateCode(authToken);
     else {
-      return await this.generateToken(authToken);
+      return await this.generateToken(authToken, { id: token.session });
     }
   }
 
@@ -270,17 +271,22 @@ export class AuthenticationService {
     return { code, redirect_uri, state: authToken.state };
   }
 
-  async generateToken(authToken: AuthToken): Promise<AuthenticationResponse> {
+  async generateToken(
+    authToken: AuthToken,
+    session?: Partial<Session>,
+  ): Promise<AuthenticationResponse> {
     const { token, state, access_token_ttl, refresh_token_ttl } = authToken;
 
-    const session = await lastValueFrom(
-      this.provider.sessions.create({
-        owner: token.uid ?? token.cid,
-        clients: [token.cid],
-        created_by: token.uid ?? token.cid,
-        created_in: token.aid ?? token.cid,
-      }),
-    );
+    if (!session) {
+      session = await lastValueFrom(
+        this.provider.sessions.create({
+          owner: token.uid ?? token.cid,
+          clients: [token.cid],
+          created_by: token.uid ?? token.cid,
+          created_in: token.aid ?? token.cid,
+        }),
+      );
+    }
 
     const access_token: JwtToken = {
       ...token,

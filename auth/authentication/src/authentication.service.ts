@@ -255,7 +255,7 @@ export class AuthenticationService {
 
     const session = await lastValueFrom(
       this.provider.sessionsService.create({
-        owner: token.uid,
+        owner: token.uid ?? token.cid,
         clients: [token.cid],
         created_by: token.uid ?? token.cid,
         created_in: token.aid ?? token.cid,

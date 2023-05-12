@@ -229,8 +229,13 @@ export class AuthenticationService {
     };
 
     const { state, redirect_uri } = data;
-    const access_token_ttl = (app ?? client).access_token_ttl;
-    const refresh_token_ttl = (app ?? client).refresh_token_ttl;
+
+    const access_token_ttl = parseInt(
+      (app ?? client).access_token_ttl.toString(),
+    );
+    const refresh_token_ttl = parseInt(
+      (app ?? client).refresh_token_ttl.toString(),
+    );
 
     return { token, state, redirect_uri, access_token_ttl, refresh_token_ttl };
   }
@@ -283,14 +288,10 @@ export class AuthenticationService {
       role: token.roles.sort().join(' '),
       scope: token.scopes.sort().join(' '),
       access_token: AES.encrypt(
-        this.jwtService.sign(access_token, {
-          expiresIn: parseInt(access_token_ttl.toString()),
-        }),
+        this.jwtService.sign(access_token, { expiresIn: access_token_ttl }),
       ),
       refresh_token: AES.encrypt(
-        this.jwtService.sign(refresh_token, {
-          expiresIn: parseInt(refresh_token_ttl.toString()),
-        }),
+        this.jwtService.sign(refresh_token, { expiresIn: refresh_token_ttl }),
       ),
     };
   }

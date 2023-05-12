@@ -10,7 +10,11 @@ import {
 } from '@app/common/interfaces';
 import { Injectable } from '@nestjs/common';
 
-import { AUTH_CACHE_TOKEN_KEY, AUTH_CACHE_TOKEN_TTL } from '@app/common/consts';
+import {
+  AUTH_CACHE_TOKEN_KEY,
+  AUTH_CACHE_TOKEN_TTL,
+  CLIENT_TTL,
+} from '@app/common/consts';
 import { isApplicable, isAvailable, toDate, toRaw } from '@app/common/utils';
 import { GrantType, ResponseType } from '@app/common/enums';
 import { AES, Bcrypt, MD5 } from '@app/common/helpers';
@@ -38,7 +42,7 @@ export class AuthenticationService {
   constructor(
     private readonly redis: RedisService,
     private readonly jwtService: JwtService,
-    private readonly blacklist: BlacklistedService,
+    private readonly blacklisted: BlacklistedService,
 
     private readonly provider: AuthenticationProvider,
   ) {}
@@ -77,11 +81,16 @@ export class AuthenticationService {
   }
 
   async logout(token: string): Promise<'OK' | 'NOK'> {
-    throw new Error('not implemented');
+    const jwtToken = this.jwtService.verify<JwtToken>(AES.decrypt(token));
+
+    return await this.blacklisted.put(jwtToken.session, {
+      prefix: AUTH_CACHE_TOKEN_KEY,
+      ttl: CLIENT_TTL.MAXIMUM_REFRESH_TOKEN,
+    });
   }
 
   async decrypt(token: string): Promise<JwtToken> {
-    throw new Error('not implemented');
+    return this.jwtService.verify<JwtToken>(AES.decrypt(token));
   }
 
   // Grant types handler
@@ -153,6 +162,10 @@ export class AuthenticationService {
     if (!client_secret) throw new Error('client secret is required');
 
     const token = this.jwtService.verify<JwtToken>(AES.decrypt(refresh_token));
+
+    const key = [AUTH_CACHE_TOKEN_KEY, token.session].join(':');
+    const isBlacklisted = await this.blacklisted.isBlacklisted(key);
+    if (isBlacklisted) throw new Error('your session is blacklisted');
 
     if (token.type !== 'refresh') throw new Error('token is not refresh');
 

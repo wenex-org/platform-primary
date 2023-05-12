@@ -3,14 +3,21 @@ import {
   AuthorizationRequest,
   AuthorizationResponse,
   Grant,
+  JwtToken,
   Pagination,
   Projection,
   Query,
 } from '@app/common/interfaces';
-import { FILTER_PAGINATION_LIMIT_MAX } from '@app/common/consts';
+import {
+  AUTH_CACHE_TOKEN_KEY,
+  FILTER_PAGINATION_LIMIT_MAX,
+} from '@app/common/consts';
+import { BlacklistedService } from '@app/blacklisted';
 import { subjects, toRaw } from '@app/common/utils';
 import { lookup } from 'naming-conventions-modeler';
 import { Injectable } from '@nestjs/common';
+import { AES } from '@app/common/helpers';
+import { JwtService } from '@nestjs/jwt';
 import { lastValueFrom } from 'rxjs';
 import AccessControl from 'abacl';
 
@@ -18,13 +25,22 @@ import { AuthorizationProvider } from './authorization.provider';
 
 @Injectable()
 export class AuthorizationService {
-  constructor(private readonly provider: AuthorizationProvider) {}
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly blacklisted: BlacklistedService,
+
+    private readonly provider: AuthorizationProvider,
+  ) {}
 
   async can(auth: AuthorizationRequest): Promise<AuthorizationResponse> {
     if (typeof auth.token === 'string')
-      auth.token = await lastValueFrom(
-        this.provider.authentication.decrypt({ token: auth.token }),
-      );
+      auth.token = this.jwtService.verify<JwtToken>(AES.decrypt(auth.token));
+
+    const isBlacklisted = await this.blacklisted.isBlacklisted(
+      AUTH_CACHE_TOKEN_KEY,
+      [auth.token.session],
+    );
+    if (isBlacklisted) throw new Error('your session is blacklisted');
 
     if (auth.token.type === 'refresh') throw new Error('token is not valid');
 

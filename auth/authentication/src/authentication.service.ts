@@ -47,12 +47,12 @@ export class AuthenticationService {
     if (data.code || data.response_type === ResponseType.Token)
       if (!data.client_secret) throw new Error('client secret is required');
 
-    if (data.roles.length && !data.domain)
+    if (data.roles?.length && !data.domain)
       throw new Error('domain is required when roles is provided');
 
     const client = await this.validateClient(data);
 
-    if (data.domain && data.roles.length) {
+    if (data.domain && data.roles?.length) {
       const domain = client.domains.find((d) => d.address === data.domain);
 
       data.roles = uniq(intersection(domain.roles, data.roles));
@@ -303,8 +303,8 @@ export class AuthenticationService {
     if (!client_id) throw new Error('client id is required');
 
     const query: Query<Client> = {
-      client_secret,
       $or: [{ client_id }, { _id: client_id }],
+      client_secret: client_secret ? MD5.hash(client_secret) : undefined,
     };
 
     const client = await lastValueFrom(

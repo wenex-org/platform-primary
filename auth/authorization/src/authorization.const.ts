@@ -7,9 +7,6 @@ const {
 } = APP;
 
 export const clientsModuleOptions: ClientsModuleOptions = [
-  /**
-   * Auth Services
-   */
   {
     // Grant Service
     name: GRANTS.PACKAGE.SYMBOL,

@@ -163,8 +163,10 @@ export class AuthenticationService {
 
     const token = this.jwtService.verify<JwtToken>(AES.decrypt(refresh_token));
 
-    const key = [AUTH_CACHE_TOKEN_KEY, token.session].join(':');
-    const isBlacklisted = await this.blacklisted.isBlacklisted(key);
+    const isBlacklisted = await this.blacklisted.isBlacklisted(
+      AUTH_CACHE_TOKEN_KEY,
+      [token.session],
+    );
     if (isBlacklisted) throw new Error('your session is blacklisted');
 
     if (token.type !== 'refresh') throw new Error('token is not refresh');

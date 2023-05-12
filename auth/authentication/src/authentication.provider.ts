@@ -15,11 +15,11 @@ const {
 
 @Injectable()
 export class AuthenticationProvider implements OnModuleInit {
-  public appsService: AppsService;
-  public clientsService: ClientsService;
+  public apps: AppsService;
+  public clients: ClientsService;
 
-  public usersService: UsersService;
-  public sessionsService: SessionsService;
+  public users: UsersService;
+  public sessions: SessionsService;
 
   constructor(
     // Domain Clients
@@ -33,18 +33,14 @@ export class AuthenticationProvider implements OnModuleInit {
 
   onModuleInit() {
     // Domain Clients
-    this.appsService = this.appsClient.getService<AppsService>(
-      APPS.SERVICE.NAME,
-    );
-    this.clientsService = this.clientsClient.getService<ClientsService>(
+    this.apps = this.appsClient.getService<AppsService>(APPS.SERVICE.NAME);
+    this.clients = this.clientsClient.getService<ClientsService>(
       CLIENTS.SERVICE.NAME,
     );
 
     // Identity Clients
-    this.usersService = this.usersClient.getService<UsersService>(
-      USERS.SERVICE.NAME,
-    );
-    this.sessionsService = this.sessionsClient.getService<SessionsService>(
+    this.users = this.usersClient.getService<UsersService>(USERS.SERVICE.NAME);
+    this.sessions = this.sessionsClient.getService<SessionsService>(
       SESSIONS.SERVICE.NAME,
     );
   }

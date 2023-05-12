@@ -1,12 +1,15 @@
-import { Controller, Get } from '@nestjs/common';
+import { GrpcMethod, GrpcService } from '@nestjs/microservices';
+
 import { AuthorizationService } from './authorization.service';
+import { AuthorizationSerializer } from './serializers';
+import { AuthorizationDto } from './dto';
 
-@Controller()
+@GrpcService()
 export class AuthorizationController {
-  constructor(private readonly authorizationService: AuthorizationService) {}
+  constructor(private readonly service: AuthorizationService) {}
 
-  @Get()
-  getHello(): string {
-    return this.authorizationService.getHello();
+  @GrpcMethod(AuthorizationService.name)
+  async can(auth: AuthorizationDto): Promise<AuthorizationSerializer> {
+    return AuthorizationSerializer.build(await this.service.can(auth));
   }
 }

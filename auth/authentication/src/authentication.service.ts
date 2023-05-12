@@ -134,7 +134,7 @@ export class AuthenticationService {
     const query: Query<User> = { $or: [{ username }, { email }] };
 
     const user = await lastValueFrom(
-      this.provider.usersService.findOne(toRaw({ query })),
+      this.provider.users.findOne(toRaw({ query })),
     );
 
     if (!user.id || !isAvailable(user) || !isApplicable(user))
@@ -177,7 +177,7 @@ export class AuthenticationService {
     const query: Query<User> = { id: token.uid ?? token.cid };
 
     const user = await lastValueFrom(
-      this.provider.usersService.findById(toRaw({ query })),
+      this.provider.users.findById(toRaw({ query })),
     );
 
     const entity = isNotEmptyObject(user) ? user : client;
@@ -274,7 +274,7 @@ export class AuthenticationService {
     const { token, state, access_token_ttl, refresh_token_ttl } = authToken;
 
     const session = await lastValueFrom(
-      this.provider.sessionsService.create({
+      this.provider.sessions.create({
         owner: token.uid ?? token.cid,
         clients: [token.cid],
         created_by: token.uid ?? token.cid,
@@ -324,7 +324,7 @@ export class AuthenticationService {
     };
 
     const client = await lastValueFrom(
-      this.provider.clientsService.findOne(toRaw({ query })),
+      this.provider.clients.findOne(toRaw({ query })),
     );
 
     if (!client.id || !isAvailable(client) || !isApplicable(client))
@@ -345,7 +345,7 @@ export class AuthenticationService {
     const query: Query<App> = { _id: data.app_id, cid: client.id };
 
     const app = await lastValueFrom(
-      this.provider.appsService.findOne(toRaw({ query })),
+      this.provider.apps.findOne(toRaw({ query })),
     );
 
     if (!app.id || !isAvailable(app) || !isApplicable(app))

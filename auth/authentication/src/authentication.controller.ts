@@ -4,7 +4,7 @@ import {
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
-import { MetadataTokenInterceptor } from '@app/common/interceptors';
+import { MetadataTransferInterceptor } from '@app/common/interceptors';
 import { GrpcMethod, GrpcService } from '@nestjs/microservices';
 import { SentryInterceptor } from '@ntegral/nestjs-sentry';
 import { AllExceptionsFilter } from '@app/common/filters';
@@ -40,13 +40,13 @@ export class AuthenticationController {
   }
 
   @GrpcMethod(AuthenticationService.name)
-  @UseInterceptors(MetadataTokenInterceptor)
+  @UseInterceptors(MetadataTransferInterceptor)
   async decrypt({ token }: TokenDto): Promise<JwtTokenSerializer> {
     return JwtTokenSerializer.build(await this.service.decrypt(token));
   }
 
   @GrpcMethod(AuthenticationService.name)
-  @UseInterceptors(MetadataTokenInterceptor)
+  @UseInterceptors(MetadataTransferInterceptor)
   async logout({ token }: TokenDto): Promise<ResultSerializer> {
     return ResultSerializer.build(await this.service.logout(token));
   }

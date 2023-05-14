@@ -27,7 +27,6 @@ import { AuthorizationProvider } from './authorization.provider';
 export class AuthorizationService {
   constructor(
     private readonly jwtService: JwtService,
-    private readonly blacklisted: BlacklistedService,
 
     private readonly provider: AuthorizationProvider,
   ) {}
@@ -35,12 +34,6 @@ export class AuthorizationService {
   async can(auth: AuthorizationRequest): Promise<AuthorizationResponse> {
     if (typeof auth.token === 'string')
       auth.token = this.jwtService.verify<JwtToken>(AES.decrypt(auth.token));
-
-    const isBlacklisted = await this.blacklisted.isBlacklisted(
-      AUTH_CACHE_TOKEN_KEY,
-      [auth.token.session],
-    );
-    if (isBlacklisted) throw new Error('your session is blacklisted');
 
     if (auth.token.type === 'refresh') throw new Error('token is not valid');
 
@@ -65,11 +58,11 @@ export class AuthorizationService {
 
     const abilities = lookup<Ability[]>(items, { times: 'time' });
 
-    const { action, resource, ip, strict } = auth;
+    const { action, object, ip, strict } = auth;
 
     const ac = new AccessControl(abilities, { strict });
 
-    const permission = ac.can(subject, action, resource, (perm) => {
+    const permission = ac.can(subject, action, object, (perm) => {
       return ip ? perm.location(ip) && perm.time() : perm.time();
     });
 

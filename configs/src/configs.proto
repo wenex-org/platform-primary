@@ -21,7 +21,7 @@ service ConfigsService {
   rpc UpdateBulk(UpdateConfigBulk) returns (Number);
 }
 
-message Number { int64 count = 1; }
+message Number { int32 count = 1; }
 
 message Filter {
   optional string query = 1;

@@ -246,12 +246,8 @@ export class AuthenticationService {
 
     const { state, redirect_uri } = data;
 
-    const access_token_ttl = parseInt(
-      (app ?? client).access_token_ttl.toString(),
-    );
-    const refresh_token_ttl = parseInt(
-      (app ?? client).refresh_token_ttl.toString(),
-    );
+    const access_token_ttl = Number((app ?? client).access_token_ttl);
+    const refresh_token_ttl = Number((app ?? client).refresh_token_ttl);
 
     return { token, state, redirect_uri, access_token_ttl, refresh_token_ttl };
   }

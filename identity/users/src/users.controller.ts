@@ -75,6 +75,11 @@ export class UsersController {
   }
 
   @GrpcMethod(UsersService.name)
+  async destroyById(@Body() data: OneFilterDto): Promise<UserSerializer> {
+    return UserSerializer.build(await this.service.destroyById(data));
+  }
+
+  @GrpcMethod(UsersService.name)
   async updateById(@Body() data: UpdateUserOneDto): Promise<UserSerializer> {
     return UserSerializer.build(
       await this.service.updateById(data.filter, data.update),

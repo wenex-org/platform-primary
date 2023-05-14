@@ -79,6 +79,11 @@ export class SessionsController {
   }
 
   @GrpcMethod(SessionsService.name)
+  async destroyById(@Body() data: OneFilterDto): Promise<SessionSerializer> {
+    return SessionSerializer.build(await this.service.destroyById(data));
+  }
+
+  @GrpcMethod(SessionsService.name)
   async updateById(
     @Body() data: UpdateSessionOneDto,
   ): Promise<SessionSerializer> {

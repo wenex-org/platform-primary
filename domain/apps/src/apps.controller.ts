@@ -75,6 +75,11 @@ export class AppsController {
   }
 
   @GrpcMethod(AppsService.name)
+  async destroyById(@Body() data: OneFilterDto): Promise<AppSerializer> {
+    return AppSerializer.build(await this.service.destroyById(data));
+  }
+
+  @GrpcMethod(AppsService.name)
   async updateById(@Body() data: UpdateAppOneDto): Promise<AppSerializer> {
     return AppSerializer.build(
       await this.service.updateById(data.filter, data.update),

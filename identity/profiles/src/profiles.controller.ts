@@ -79,6 +79,11 @@ export class ProfilesController {
   }
 
   @GrpcMethod(ProfilesService.name)
+  async destroyById(@Body() data: OneFilterDto): Promise<ProfileSerializer> {
+    return ProfileSerializer.build(await this.service.destroyById(data));
+  }
+
+  @GrpcMethod(ProfilesService.name)
   async updateById(
     @Body() data: UpdateProfileOneDto,
   ): Promise<ProfileSerializer> {

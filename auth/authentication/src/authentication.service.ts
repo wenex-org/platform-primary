@@ -186,7 +186,7 @@ export class AuthenticationService {
     if (token.cid !== client.id || token.client_id !== client.client_id)
       throw new Error('incompatible client id detected');
 
-    const query: Query<User> = { id: token.uid ?? token.cid };
+    const query: Query<User> = { _id: token.uid ?? token.cid };
 
     const user = await lastValueFrom(
       this.provider.users.findById(toRaw({ query })),

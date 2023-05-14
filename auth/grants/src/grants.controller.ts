@@ -75,6 +75,11 @@ export class GrantsController {
   }
 
   @GrpcMethod(GrantsService.name)
+  async destroyById(@Body() data: OneFilterDto): Promise<GrantSerializer> {
+    return GrantSerializer.build(await this.service.destroyById(data));
+  }
+
+  @GrpcMethod(GrantsService.name)
   async updateById(@Body() data: UpdateGrantOneDto): Promise<GrantSerializer> {
     return GrantSerializer.build(
       await this.service.updateById(data.filter, data.update),

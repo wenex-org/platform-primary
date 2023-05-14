@@ -33,16 +33,9 @@ export class AuthenticationController {
     data: AuthenticationDto,
     metadata: Metadata,
   ): Promise<AuthenticationSerializer> {
-    console.log(metadata);
-    return AuthenticationSerializer.build(await this.service.token(data));
-  }
-
-  @GrpcMethod(AuthenticationService.name)
-  async logout(
-    { token }: TokenDto,
-    metadata: Metadata,
-  ): Promise<ResultSerializer> {
-    return ResultSerializer.build(await this.service.logout(token));
+    return AuthenticationSerializer.build(
+      await this.service.token(data, metadata),
+    );
   }
 
   @GrpcMethod(AuthenticationService.name)
@@ -50,6 +43,16 @@ export class AuthenticationController {
     { token }: TokenDto,
     metadata: Metadata,
   ): Promise<JwtTokenSerializer> {
-    return JwtTokenSerializer.build(await this.service.decrypt(token));
+    return JwtTokenSerializer.build(
+      await this.service.decrypt(token, metadata),
+    );
+  }
+
+  @GrpcMethod(AuthenticationService.name)
+  async logout(
+    { token }: TokenDto,
+    metadata: Metadata,
+  ): Promise<ResultSerializer> {
+    return ResultSerializer.build(await this.service.logout(token, metadata));
   }
 }

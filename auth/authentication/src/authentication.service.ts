@@ -24,6 +24,7 @@ import { isNotEmptyObject } from 'class-validator';
 import { intersection, uniq } from 'lodash';
 import { RedisService } from '@app/redis';
 import { JwtService } from '@nestjs/jwt';
+import { Metadata } from '@grpc/grpc-js';
 import { lastValueFrom } from 'rxjs';
 
 import { AuthenticationProvider } from './authentication.provider';
@@ -38,6 +39,13 @@ export type AuthToken = {
   refresh_token_ttl: number;
 };
 
+export type AuthenticationOptions = {
+  app: App;
+  user?: User;
+  client: Client;
+  metadata: Metadata;
+};
+
 @Injectable()
 export class AuthenticationService {
   constructor(
@@ -48,7 +56,10 @@ export class AuthenticationService {
     private readonly provider: AuthenticationProvider,
   ) {}
 
-  async token(data: AuthenticationRequest): Promise<AuthenticationResponse> {
+  async token(
+    data: AuthenticationRequest,
+    metadata: Metadata,
+  ): Promise<AuthenticationResponse> {
     if (data.code || data.response_type === ResponseType.Token)
       if (!data.client_secret) throw new Error('client secret is required');
 
@@ -78,10 +89,12 @@ export class AuthenticationService {
     if (!data.roles?.length) data.roles = ['guest'];
     if (!data.domain) data.domain = client.domains[0]?.address;
 
-    return await this.handler(data, { client, app });
+    return await this.handler(data, { metadata, client, app });
   }
 
-  async logout(token: string): Promise<'OK' | 'NOK'> {
+  async logout(token: string, metadata: Metadata): Promise<'OK' | 'NOK'> {
+    token = token ?? String(metadata.get('authorization'));
+
     const jwtToken = this.jwtService.verify<JwtToken>(AES.decrypt(token));
 
     return await this.blacklisted.put(jwtToken.session, {
@@ -90,7 +103,9 @@ export class AuthenticationService {
     });
   }
 
-  async decrypt(token: string): Promise<JwtToken> {
+  async decrypt(token: string, metadata: Metadata): Promise<JwtToken> {
+    token = token ?? String(metadata.get('authorization'));
+
     return this.jwtService.verify<JwtToken>(AES.decrypt(token));
   }
 
@@ -98,19 +113,19 @@ export class AuthenticationService {
 
   async handler(
     data: AuthenticationRequest,
-    { client, app }: { client: Client; app: App },
+    { metadata, client, app }: AuthenticationOptions,
   ) {
     switch (data.grant_type) {
       case GrantType.OTP:
-        return await this.otp(data, { client, app });
+        return await this.otp(data, { metadata, client, app });
       case GrantType.Password:
-        return await this.password(data, { client, app });
+        return await this.password(data, { metadata, client, app });
       case GrantType.RefreshToken:
-        return await this.refreshToken(data, { client, app });
+        return await this.refreshToken(data, { metadata, client, app });
       case GrantType.ClientCredential:
-        return await this.clientCredential(data, { client, app });
+        return await this.clientCredential(data, { metadata, client, app });
       case GrantType.AuthorizationCode:
-        return await this.authorizationCode(data, { client, app });
+        return await this.authorizationCode(data, { metadata, client, app });
       default:
         throw new Error('grant type is not supported');
     }
@@ -118,14 +133,14 @@ export class AuthenticationService {
 
   async otp(
     data: AuthenticationRequest,
-    { client, app }: { client: Client; app: App },
+    { metadata, client, app }: AuthenticationOptions,
   ): Promise<AuthenticationResponse> {
     throw new Error('otp grant type not implemented');
   }
 
   async password(
     data: AuthenticationRequest,
-    { client, app }: { client: Client; app: App },
+    { metadata, client, app }: AuthenticationOptions,
   ): Promise<AuthenticationResponse> {
     const { username, email, password } = data;
 
@@ -147,7 +162,7 @@ export class AuthenticationService {
     const authToken = await this.authToken(data, { client, user, app });
 
     if (data.response_type === ResponseType.Token)
-      return await this.generateToken(authToken);
+      return await this.generateToken(authToken, { metadata });
     else {
       return await this.generateCode(authToken);
     }
@@ -155,7 +170,7 @@ export class AuthenticationService {
 
   async refreshToken(
     data: AuthenticationRequest,
-    { client, app }: { client: Client; app: App },
+    { client, app }: AuthenticationOptions,
   ): Promise<AuthenticationResponse> {
     const { refresh_token, client_secret } = data;
 
@@ -188,16 +203,14 @@ export class AuthenticationService {
 
     const authToken = await this.authToken(data, { client, user, app });
 
-    if (data.response_type === ResponseType.Code)
-      return await this.generateCode(authToken);
-    else {
-      return await this.generateToken(authToken, { id: token.session });
-    }
+    return await this.generateToken(authToken, {
+      session: { id: token.session },
+    });
   }
 
   async clientCredential(
     data: AuthenticationRequest,
-    { client, app }: { client: Client; app: App },
+    { metadata, client, app }: AuthenticationOptions,
   ): Promise<AuthenticationResponse> {
     const { client_secret } = data;
 
@@ -208,13 +221,13 @@ export class AuthenticationService {
     if (data.response_type === ResponseType.Code)
       return await this.generateCode(authToken);
     else {
-      return await this.generateToken(authToken);
+      return await this.generateToken(authToken, { metadata });
     }
   }
 
   async authorizationCode(
     data: AuthenticationRequest,
-    { client, app }: { client: Client; app: App },
+    { metadata, client, app }: AuthenticationOptions,
   ): Promise<AuthenticationResponse> {
     const { code } = data;
 
@@ -225,14 +238,14 @@ export class AuthenticationService {
 
     if (!authToken) throw new Error('code is not valid');
 
-    return await this.generateToken(authToken);
+    return await this.generateToken(authToken, { metadata });
   }
 
   // Generate token/code
 
   async authToken(
     data: AuthenticationRequest,
-    { client, user, app }: { client: Client; user?: User; app?: App },
+    { client, user, app }: Omit<AuthenticationOptions, 'metadata'>,
   ): Promise<AuthToken> {
     const token: AuthToken['token'] = {
       cid: client.id,
@@ -269,17 +282,20 @@ export class AuthenticationService {
 
   async generateToken(
     authToken: AuthToken,
-    session?: Partial<Session>,
+    options: { session?: Partial<Session>; metadata?: Metadata } = {},
   ): Promise<AuthenticationResponse> {
     const { token, state, access_token_ttl, refresh_token_ttl } = authToken;
 
-    if (!session) {
-      session = await lastValueFrom(
+    if (!options.session) {
+      const { metadata } = options;
+
+      options.session = await lastValueFrom(
         this.provider.sessions.create({
           owner: token.uid ?? token.cid,
           clients: [token.cid],
           created_by: token.uid ?? token.cid,
           created_in: token.aid ?? token.cid,
+          agent: String(metadata?.get('x-user-agent')),
         }),
       );
     }
@@ -287,20 +303,19 @@ export class AuthenticationService {
     const access_token: JwtToken = {
       ...token,
       type: 'access',
-      session: session.id,
+      session: options.session.id,
     };
 
     const refresh_token: JwtToken = {
       ...token,
       type: 'refresh',
-      session: session.id,
+      session: options.session.id,
     };
 
     return {
       token_type: 'Bearer',
-      session: session.id,
-      state,
       domain: token.domain,
+      session: options.session.id,
       expires_in: access_token_ttl,
       role: token.roles.sort().join(' '),
       scope: token.scopes.sort().join(' '),
@@ -310,6 +325,7 @@ export class AuthenticationService {
       refresh_token: AES.encrypt(
         this.jwtService.sign(refresh_token, { expiresIn: refresh_token_ttl }),
       ),
+      state,
     };
   }
 

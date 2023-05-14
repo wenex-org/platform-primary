@@ -92,9 +92,7 @@ export class AuthenticationService {
     return await this.handler(data, { metadata, client, app });
   }
 
-  async logout(token: string, metadata: Metadata): Promise<'OK' | 'NOK'> {
-    token = token ?? String(metadata.get('authorization'));
-
+  async logout(token: string): Promise<'OK' | 'NOK'> {
     const jwtToken = this.jwtService.verify<JwtToken>(AES.decrypt(token));
 
     return await this.blacklisted.put(jwtToken.session, {
@@ -103,9 +101,7 @@ export class AuthenticationService {
     });
   }
 
-  async decrypt(token: string, metadata: Metadata): Promise<JwtToken> {
-    token = token ?? String(metadata.get('authorization'));
-
+  async decrypt(token: string): Promise<JwtToken> {
     return this.jwtService.verify<JwtToken>(AES.decrypt(token));
   }
 

@@ -37,18 +37,23 @@ export class AuthorizationService {
     auth: AuthorizationRequest,
     meta?: Metadata,
   ): Promise<AuthorizationResponse> {
+    if (!auth.ip && meta) auth.ip = String(meta.get('x-user-ip'));
+    if (!auth.token && meta) auth.token = String(meta.get('authorization'));
+
     if (typeof auth.token === 'string')
       auth.token = this.jwtService.verify<JwtToken>(AES.decrypt(auth.token));
 
+    const { action, object, token, ip, strict } = auth;
+
     const isBlacklisted = await this.blacklisted.isBlacklisted(
       AUTH_CACHE_TOKEN_KEY,
-      [auth.token.session, String(meta?.get('x-user-ip'))],
+      [token.session, ip],
     );
     if (isBlacklisted) throw new Error('your are blacklisted');
 
-    if (auth.token.type === 'refresh') throw new Error('token is not valid');
+    if (token.type === 'refresh') throw new Error('token is not valid');
 
-    const { cid, roles, domain } = auth.token;
+    const { cid, roles, domain } = token;
     const subject = subjects(roles, domain);
 
     const query: Query<Grant> = {
@@ -68,8 +73,6 @@ export class AuthorizationService {
     );
 
     const abilities = lookup<Ability[]>(items, { times: 'time' });
-
-    const { action, object, ip, strict } = auth;
 
     const ac = new AccessControl(abilities, { strict });
 

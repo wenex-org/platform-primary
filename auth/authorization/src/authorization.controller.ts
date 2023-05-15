@@ -1,4 +1,5 @@
 import {
+  Body,
   ClassSerializerInterceptor,
   UseFilters,
   UseInterceptors,
@@ -9,6 +10,8 @@ import { GrpcMethod, GrpcService } from '@nestjs/microservices';
 import { SentryInterceptor } from '@ntegral/nestjs-sentry';
 import { AllExceptionsFilter } from '@app/common/filters';
 import { ValidationPipe } from '@app/common/pipes';
+import { Meta } from '@app/common/decorators';
+import { Metadata } from '@grpc/grpc-js';
 
 import { AuthorizationService } from './authorization.service';
 import { AuthorizationSerializer } from './serializers';
@@ -26,7 +29,10 @@ export class AuthorizationController {
   constructor(private readonly service: AuthorizationService) {}
 
   @GrpcMethod(AuthorizationService.name)
-  async can(auth: AuthorizationDto): Promise<AuthorizationSerializer> {
-    return AuthorizationSerializer.build(await this.service.can(auth));
+  async can(
+    @Meta() meta: Metadata,
+    @Body() auth: AuthorizationDto,
+  ): Promise<AuthorizationSerializer> {
+    return AuthorizationSerializer.build(await this.service.can(auth, meta));
   }
 }

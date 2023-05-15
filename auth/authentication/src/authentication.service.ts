@@ -7,6 +7,7 @@ import {
   JwtToken,
   Query,
   Session,
+  Token,
   User,
 } from '@app/common/interfaces';
 import {
@@ -91,7 +92,9 @@ export class AuthenticationService {
     return await this.handler(data, { metadata, client, app });
   }
 
-  async logout(token: string): Promise<'OK' | 'NOK'> {
+  async logout({ token }: Token, meta?: Metadata): Promise<'OK' | 'NOK'> {
+    if (!token && meta) token = String(meta.get('authorization'));
+
     const jwtToken = this.jwtService.verify<JwtToken>(AES.decrypt(token));
 
     return await this.blacklisted.put(jwtToken.session, {
@@ -100,7 +103,9 @@ export class AuthenticationService {
     });
   }
 
-  async decrypt(token: string): Promise<JwtToken> {
+  async decrypt({ token }: Token, meta?: Metadata): Promise<JwtToken> {
+    if (!token && meta) token = String(meta.get('authorization'));
+
     return this.jwtService.verify<JwtToken>(AES.decrypt(token));
   }
 

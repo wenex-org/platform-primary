@@ -1,4 +1,5 @@
 import {
+  Body,
   ClassSerializerInterceptor,
   UseFilters,
   UseInterceptors,
@@ -9,6 +10,7 @@ import { GrpcMethod, GrpcService } from '@nestjs/microservices';
 import { SentryInterceptor } from '@ntegral/nestjs-sentry';
 import { AllExceptionsFilter } from '@app/common/filters';
 import { ValidationPipe } from '@app/common/pipes';
+import { Meta } from '@app/common/decorators';
 import { Metadata } from '@grpc/grpc-js';
 
 import {
@@ -32,8 +34,8 @@ export class AuthenticationController {
 
   @GrpcMethod(AuthenticationService.name)
   async token(
-    data: AuthenticationDto,
-    metadata: Metadata,
+    @Meta() metadata: Metadata,
+    @Body() data: AuthenticationDto,
   ): Promise<AuthenticationSerializer> {
     return AuthenticationSerializer.build(
       await this.service.token(data, metadata),
@@ -41,12 +43,18 @@ export class AuthenticationController {
   }
 
   @GrpcMethod(AuthenticationService.name)
-  async decrypt({ token }: TokenDto): Promise<JwtTokenSerializer> {
-    return JwtTokenSerializer.build(await this.service.decrypt(token));
+  async decrypt(
+    @Meta() meta: Metadata,
+    @Body() token: TokenDto,
+  ): Promise<JwtTokenSerializer> {
+    return JwtTokenSerializer.build(await this.service.decrypt(token, meta));
   }
 
   @GrpcMethod(AuthenticationService.name)
-  async logout({ token }: TokenDto): Promise<ResultSerializer> {
-    return ResultSerializer.build(await this.service.logout(token));
+  async logout(
+    @Meta() meta: Metadata,
+    @Body() token: TokenDto,
+  ): Promise<ResultSerializer> {
+    return ResultSerializer.build(await this.service.logout(token, meta));
   }
 }

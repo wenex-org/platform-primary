@@ -18,6 +18,7 @@ import { lookup } from 'naming-conventions-modeler';
 import { Injectable } from '@nestjs/common';
 import { AES } from '@app/common/helpers';
 import { JwtService } from '@nestjs/jwt';
+import { Metadata } from '@grpc/grpc-js';
 import { lastValueFrom } from 'rxjs';
 import AccessControl from 'abacl';
 
@@ -32,13 +33,16 @@ export class AuthorizationService {
     private readonly blacklisted: BlacklistedService,
   ) {}
 
-  async can(auth: AuthorizationRequest): Promise<AuthorizationResponse> {
+  async can(
+    auth: AuthorizationRequest,
+    meta?: Metadata,
+  ): Promise<AuthorizationResponse> {
     if (typeof auth.token === 'string')
       auth.token = this.jwtService.verify<JwtToken>(AES.decrypt(auth.token));
 
     const isBlacklisted = await this.blacklisted.isBlacklisted(
       AUTH_CACHE_TOKEN_KEY,
-      [auth.token.session],
+      [auth.token.session, String(meta?.get('x-user-ip'))],
     );
     if (isBlacklisted) throw new Error('your are blacklisted');
 

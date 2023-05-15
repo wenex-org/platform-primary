@@ -9,8 +9,6 @@ import {
   Session,
   User,
 } from '@app/common/interfaces';
-import { Injectable } from '@nestjs/common';
-
 import {
   AUTH_CACHE_TOKEN_KEY,
   AUTH_CACHE_TOKEN_TTL,
@@ -22,6 +20,7 @@ import { AES, Bcrypt, MD5 } from '@app/common/helpers';
 import { BlacklistedService } from '@app/blacklisted';
 import { isNotEmptyObject } from 'class-validator';
 import { intersection, uniq } from 'lodash';
+import { Injectable } from '@nestjs/common';
 import { RedisService } from '@app/redis';
 import { JwtService } from '@nestjs/jwt';
 import { Metadata } from '@grpc/grpc-js';

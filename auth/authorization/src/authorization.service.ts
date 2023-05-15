@@ -26,14 +26,21 @@ import { AuthorizationProvider } from './authorization.provider';
 @Injectable()
 export class AuthorizationService {
   constructor(
-    private readonly jwtService: JwtService,
-
     private readonly provider: AuthorizationProvider,
+
+    private readonly jwtService: JwtService,
+    private readonly blacklisted: BlacklistedService,
   ) {}
 
   async can(auth: AuthorizationRequest): Promise<AuthorizationResponse> {
     if (typeof auth.token === 'string')
       auth.token = this.jwtService.verify<JwtToken>(AES.decrypt(auth.token));
+
+    const isBlacklisted = await this.blacklisted.isBlacklisted(
+      AUTH_CACHE_TOKEN_KEY,
+      [auth.token.session],
+    );
+    if (isBlacklisted) throw new Error('your are blacklisted');
 
     if (auth.token.type === 'refresh') throw new Error('token is not valid');
 

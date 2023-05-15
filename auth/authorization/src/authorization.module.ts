@@ -2,6 +2,7 @@ import { JWT_SECRET, NODE_ENV, SENTRY_DSN } from '@app/common/configs';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { ClientsModule } from '@nestjs/microservices';
 import { SentryModule } from '@ntegral/nestjs-sentry';
+import { BlacklistedModule } from '@app/blacklisted';
 import { HealthModule } from '@app/health';
 import { JwtModule } from '@nestjs/jwt';
 import { Module } from '@nestjs/common';
@@ -13,6 +14,7 @@ import { clientsModuleOptions } from './authorization.const';
 
 @Module({
   imports: [
+    BlacklistedModule,
     PrometheusModule.register(),
     HealthModule.register(['disk', 'memory']),
     JwtModule.register({ secret: JWT_SECRET() }),

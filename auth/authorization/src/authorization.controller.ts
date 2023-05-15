@@ -4,7 +4,7 @@ import {
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
-import { MetadataTransferInterceptor } from '@app/common/interceptors';
+import { MetadataBindInterceptor } from '@app/common/interceptors';
 import { GrpcMethod, GrpcService } from '@nestjs/microservices';
 import { SentryInterceptor } from '@ntegral/nestjs-sentry';
 import { AllExceptionsFilter } from '@app/common/filters';
@@ -18,6 +18,7 @@ import { AuthorizationDto } from './dto';
 @UsePipes(ValidationPipe)
 @UseFilters(AllExceptionsFilter)
 @UseInterceptors(
+  MetadataBindInterceptor,
   ClassSerializerInterceptor,
   new SentryInterceptor({ version: true }),
 )
@@ -25,7 +26,6 @@ export class AuthorizationController {
   constructor(private readonly service: AuthorizationService) {}
 
   @GrpcMethod(AuthorizationService.name)
-  @UseInterceptors(MetadataTransferInterceptor)
   async can(auth: AuthorizationDto): Promise<AuthorizationSerializer> {
     return AuthorizationSerializer.build(await this.service.can(auth));
   }

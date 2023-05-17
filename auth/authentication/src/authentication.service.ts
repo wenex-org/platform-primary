@@ -289,14 +289,19 @@ export class AuthenticationService {
     if (!options.session) {
       const { metadata } = options;
 
+      metadata.set('token', JSON.stringify(token));
+
       options.session = await lastValueFrom(
-        this.provider.sessions.create({
-          owner: token.uid ?? token.cid,
-          clients: [token.cid],
-          created_by: token.uid ?? token.cid,
-          created_in: token.aid ?? token.cid,
-          agent: String(metadata?.get('x-user-agent')),
-        }),
+        this.provider.sessions.create(
+          {
+            owner: token.uid ?? token.cid,
+            clients: [token.cid],
+            created_by: token.uid ?? token.cid,
+            created_in: token.aid ?? token.cid,
+            agent: String(metadata?.get('x-user-agent')),
+          },
+          metadata,
+        ),
       );
     }
 

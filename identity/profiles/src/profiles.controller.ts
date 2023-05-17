@@ -11,9 +11,9 @@ import { GrpcMethod, GrpcService } from '@nestjs/microservices';
 import { SentryInterceptor } from '@ntegral/nestjs-sentry';
 import { AllExceptionsFilter } from '@app/common/filters';
 import { CountSerializer } from '@app/common/serializers';
+import { Filter, Meta } from '@app/common/decorators';
 import { ValidationPipe } from '@app/common/pipes';
 import { Observable, Subject, from } from 'rxjs';
-import { Meta } from '@app/common/decorators';
 import { Metadata } from '@grpc/grpc-js';
 
 import {
@@ -36,11 +36,8 @@ export class ProfilesController {
   constructor(private readonly service: ProfilesService) {}
 
   @GrpcMethod(ProfilesService.name)
-  async count(
-    @Meta() meta: Metadata,
-    @Body() data: CountFilterDto,
-  ): Promise<CountSerializer> {
-    return CountSerializer.build(await this.service.count(data, meta));
+  async count(@Filter() filter: CountFilterDto): Promise<CountSerializer> {
+    return CountSerializer.build(await this.service.count(filter));
   }
 
   @GrpcMethod(ProfilesService.name)
@@ -52,13 +49,10 @@ export class ProfilesController {
   }
 
   @GrpcMethod(ProfilesService.name)
-  cursor(
-    @Meta() meta: Metadata,
-    @Body() data: FilterDto,
-  ): Observable<ProfileSerializer> {
+  cursor(@Filter() filter: FilterDto): Observable<ProfileSerializer> {
     const subject = new Subject<ProfileSerializer>();
 
-    from(this.service.cursor(data, meta)).subscribe({
+    from(this.service.cursor(filter)).subscribe({
       complete: () => subject.complete(),
       next: (value) => subject.next(ProfileSerializer.build(value)),
     });
@@ -67,70 +61,62 @@ export class ProfilesController {
   }
 
   @GrpcMethod(ProfilesService.name)
-  async findOne(
-    @Meta() meta: Metadata,
-    @Body() data: OneFilterDto,
-  ): Promise<ProfileSerializer> {
-    return ProfileSerializer.build(await this.service.findOne(data, meta));
+  async findOne(@Filter() filter: OneFilterDto): Promise<ProfileSerializer> {
+    return ProfileSerializer.build(await this.service.findOne(filter));
   }
 
   @GrpcMethod(ProfilesService.name)
-  async findMany(
-    @Meta() meta: Metadata,
-    @Body() data: FilterDto,
-  ): Promise<ProfilesSerializer> {
-    return ProfilesSerializer.build(await this.service.findMany(data, meta));
+  async findMany(@Filter() filter: FilterDto): Promise<ProfilesSerializer> {
+    return ProfilesSerializer.build(await this.service.findMany(filter));
   }
 
   @GrpcMethod(ProfilesService.name)
-  async findById(
-    @Meta() meta: Metadata,
-    @Body() data: OneFilterDto,
-  ): Promise<ProfileSerializer> {
-    return ProfileSerializer.build(await this.service.findById(data, meta));
+  async findById(@Filter() filter: OneFilterDto): Promise<ProfileSerializer> {
+    return ProfileSerializer.build(await this.service.findById(filter));
   }
 
   @GrpcMethod(ProfilesService.name)
   async deleteById(
     @Meta() meta: Metadata,
-    @Body() data: OneFilterDto,
+    @Filter() filter: OneFilterDto,
   ): Promise<ProfileSerializer> {
-    return ProfileSerializer.build(await this.service.deleteById(data, meta));
+    return ProfileSerializer.build(await this.service.deleteById(filter, meta));
   }
 
   @GrpcMethod(ProfilesService.name)
   async restoreById(
     @Meta() meta: Metadata,
-    @Body() data: OneFilterDto,
+    @Filter() filter: OneFilterDto,
   ): Promise<ProfileSerializer> {
-    return ProfileSerializer.build(await this.service.restoreById(data, meta));
+    return ProfileSerializer.build(
+      await this.service.restoreById(filter, meta),
+    );
   }
 
   @GrpcMethod(ProfilesService.name)
   async destroyById(
-    @Meta() meta: Metadata,
-    @Body() data: OneFilterDto,
+    @Filter() filter: OneFilterDto,
   ): Promise<ProfileSerializer> {
-    return ProfileSerializer.build(await this.service.destroyById(data, meta));
+    return ProfileSerializer.build(await this.service.destroyById(filter));
   }
 
   @GrpcMethod(ProfilesService.name)
   async updateById(
     @Meta() meta: Metadata,
-    @Body() data: UpdateProfileOneDto,
+    @Body() { filter, update }: UpdateProfileOneDto,
   ): Promise<ProfileSerializer> {
     return ProfileSerializer.build(
-      await this.service.updateById(data.filter, data.update, meta),
+      await this.service.updateById(filter, update, meta),
     );
   }
 
   @GrpcMethod(ProfilesService.name)
   async updateBulk(
     @Meta() meta: Metadata,
-    @Body() data: UpdateProfileBulkDto,
+    @Body() { filter, update }: UpdateProfileBulkDto,
   ): Promise<CountSerializer> {
     return CountSerializer.build(
-      await this.service.updateBulk(data.filter, data.update, meta),
+      await this.service.updateBulk(filter, update, meta),
     );
   }
 }

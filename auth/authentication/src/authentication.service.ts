@@ -92,7 +92,7 @@ export class AuthenticationService {
     return await this.handler(data, { metadata, client, app });
   }
 
-  async logout({ token }: Token, meta?: Metadata): Promise<'OK' | 'NOK'> {
+  async logout({ token }: Token, meta?: Metadata): Promise<'OK'> {
     if (!token && meta) token = String(meta.get('authorization'));
 
     const jwtToken = this.jwtService.verify<JwtToken>(AES.decrypt(token));

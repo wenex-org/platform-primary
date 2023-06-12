@@ -10,7 +10,7 @@ import { MetadataBindInterceptor } from '@app/common/interceptors';
 import { GrpcMethod, GrpcService } from '@nestjs/microservices';
 import { SentryInterceptor } from '@ntegral/nestjs-sentry';
 import { AllExceptionsFilter } from '@app/common/filters';
-import { CountSerializer } from '@app/common/serializers';
+import { TotalSerializer } from '@app/common/serializers';
 import { Filter, Meta } from '@app/common/decorators';
 import { ValidationPipe } from '@app/common/pipes';
 import { Observable, Subject, from } from 'rxjs';
@@ -36,8 +36,8 @@ export class ClientsController {
   constructor(private readonly service: ClientsService) {}
 
   @GrpcMethod(ClientsService.name)
-  async count(@Filter() filter: QueryFilterDto): Promise<CountSerializer> {
-    return CountSerializer.build(await this.service.count(filter));
+  async count(@Filter() filter: QueryFilterDto): Promise<TotalSerializer> {
+    return TotalSerializer.build(await this.service.count(filter));
   }
 
   @GrpcMethod(ClientsService.name)
@@ -110,8 +110,8 @@ export class ClientsController {
   async updateBulk(
     @Meta() meta: Metadata,
     @Body() { filter, update }: UpdateClientBulkDto,
-  ): Promise<CountSerializer> {
-    return CountSerializer.build(
+  ): Promise<TotalSerializer> {
+    return TotalSerializer.build(
       await this.service.updateBulk(filter, update, meta),
     );
   }

@@ -5,16 +5,26 @@ import {
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
-import { QueryFilterDto, FilterDto, OneFilterDto } from '@app/common/dto';
-import { MetadataBindInterceptor } from '@app/common/interceptors';
+import {
+  QueryFilterDto,
+  FilterDto,
+  OneFilterDto,
+  UniqueFilterDto,
+  UpdateGrantUniqueDto,
+} from '@app/common/dto';
+import {
+  CacheInterceptor,
+  SetMetadataInterceptor,
+} from '@app/common/interceptors';
+import { GrantInterface, Metadata } from '@app/common/interfaces';
 import { GrpcMethod, GrpcService } from '@nestjs/microservices';
 import { SentryInterceptor } from '@ntegral/nestjs-sentry';
 import { AllExceptionsFilter } from '@app/common/filters';
-import { CountSerializer } from '@app/common/serializers';
+import { TotalSerializer } from '@app/common/serializers';
+import { Observable, Subject, from, map } from 'rxjs';
 import { Filter, Meta } from '@app/common/decorators';
 import { ValidationPipe } from '@app/common/pipes';
-import { Observable, Subject, from } from 'rxjs';
-import { Metadata } from '@grpc/grpc-js';
+import { Cache } from '@app/common/metadatas';
 
 import { CreateGrantDto, UpdateGrantBulkDto, UpdateGrantOneDto } from './dto';
 import { GrantSerializer, GrantsSerializer } from './serializers';
@@ -24,7 +34,8 @@ import { GrantsService } from './grants.service';
 @UsePipes(ValidationPipe)
 @UseFilters(AllExceptionsFilter)
 @UseInterceptors(
-  MetadataBindInterceptor,
+  CacheInterceptor,
+  SetMetadataInterceptor,
   ClassSerializerInterceptor,
   new SentryInterceptor({ version: true }),
 )
@@ -32,83 +43,121 @@ export class GrantsController {
   constructor(private readonly service: GrantsService) {}
 
   @GrpcMethod(GrantsService.name)
-  async count(@Filter() filter: QueryFilterDto): Promise<CountSerializer> {
-    return CountSerializer.build(await this.service.count(filter));
+  count(@Filter() filter: QueryFilterDto): Observable<TotalSerializer> {
+    return this.service.count(filter).pipe(map((res) => ({ total: res })));
   }
 
+  @Cache('grants', 'setter')
   @GrpcMethod(GrantsService.name)
-  async create(
+  create(
     @Meta() meta: Metadata,
     @Body() data: CreateGrantDto,
-  ): Promise<GrantSerializer> {
-    return GrantSerializer.build(await this.service.create(data, meta));
+  ): Observable<GrantSerializer> {
+    return this.service.create(data, meta);
+  }
+
+  @Cache('grants', 'getter')
+  @GrpcMethod(GrantsService.name)
+  find(@Filter() filter: FilterDto): Observable<GrantsSerializer> {
+    return this.service.find(filter).pipe(map((res) => ({ data: res })));
   }
 
   @GrpcMethod(GrantsService.name)
   cursor(@Filter() filter: FilterDto): Observable<GrantSerializer> {
-    const subject = new Subject<GrantSerializer>();
+    const subject = new Subject<GrantInterface>();
 
     from(this.service.cursor(filter)).subscribe({
       complete: () => subject.complete(),
-      next: (value) => subject.next(GrantSerializer.build(value)),
+      next: (value) => subject.next(value),
     });
 
     return subject.asObservable();
   }
 
+  @Cache('grants', 'getter')
   @GrpcMethod(GrantsService.name)
-  async findOne(@Filter() filter: OneFilterDto): Promise<GrantSerializer> {
-    return GrantSerializer.build(await this.service.findOne(filter));
+  findOne(@Filter() filter: OneFilterDto): Observable<GrantSerializer> {
+    return this.service.findOne(filter);
   }
 
+  @Cache('grants', 'getter')
   @GrpcMethod(GrantsService.name)
-  async findMany(@Filter() filter: FilterDto): Promise<GrantsSerializer> {
-    return GrantsSerializer.build(await this.service.findMany(filter));
+  findById(@Filter() filter: UniqueFilterDto): Observable<GrantSerializer> {
+    return this.service.findById(filter);
   }
 
+  @Cache('grants', 'setter')
   @GrpcMethod(GrantsService.name)
-  async findById(@Filter() filter: OneFilterDto): Promise<GrantSerializer> {
-    return GrantSerializer.build(await this.service.findById(filter));
-  }
-
-  @GrpcMethod(GrantsService.name)
-  async deleteById(
+  deleteOne(
     @Meta() meta: Metadata,
     @Filter() filter: OneFilterDto,
-  ): Promise<GrantSerializer> {
-    return GrantSerializer.build(await this.service.deleteById(filter, meta));
+  ): Observable<GrantSerializer> {
+    return this.service.deleteOne(filter, { meta });
   }
 
+  @Cache('grants', 'setter')
   @GrpcMethod(GrantsService.name)
-  async restoreById(
+  deleteById(
+    @Meta() meta: Metadata,
+    @Filter() filter: UniqueFilterDto,
+  ): Observable<GrantSerializer> {
+    return this.service.deleteById(filter, { meta });
+  }
+
+  @Cache('grants', 'setter')
+  @GrpcMethod(GrantsService.name)
+  restoreOne(
     @Meta() meta: Metadata,
     @Filter() filter: OneFilterDto,
-  ): Promise<GrantSerializer> {
-    return GrantSerializer.build(await this.service.restoreById(filter, meta));
+  ): Observable<GrantSerializer> {
+    return this.service.restoreOne(filter, { meta });
   }
 
+  @Cache('grants', 'setter')
   @GrpcMethod(GrantsService.name)
-  async destroyById(@Filter() filter: OneFilterDto): Promise<GrantSerializer> {
-    return GrantSerializer.build(await this.service.destroyById(filter));
-  }
-
-  @GrpcMethod(GrantsService.name)
-  async updateById(
+  restoreById(
     @Meta() meta: Metadata,
-    @Body() { filter, update }: UpdateGrantOneDto,
-  ): Promise<GrantSerializer> {
-    return GrantSerializer.build(
-      await this.service.updateById(filter, update, meta),
-    );
+    @Filter() filter: UniqueFilterDto,
+  ): Observable<GrantSerializer> {
+    return this.service.restoreById(filter, { meta });
   }
 
   @GrpcMethod(GrantsService.name)
-  async updateBulk(
+  destroyOne(@Filter() filter: OneFilterDto): Observable<GrantSerializer> {
+    return this.service.destroyOne(filter);
+  }
+
+  @GrpcMethod(GrantsService.name)
+  destroyById(@Filter() filter: UniqueFilterDto): Observable<GrantSerializer> {
+    return this.service.destroyById(filter);
+  }
+
+  @Cache('grants', 'setter')
+  @GrpcMethod(GrantsService.name)
+  updateOne(
     @Meta() meta: Metadata,
-    @Body() { filter, update }: UpdateGrantBulkDto,
-  ): Promise<CountSerializer> {
-    return CountSerializer.build(
-      await this.service.updateBulk(filter, update, meta),
-    );
+    @Body() { data, filter }: UpdateGrantOneDto,
+  ): Observable<GrantSerializer> {
+    return this.service.updateOne(data, filter, { meta });
+  }
+
+  @Cache('grants', 'flush')
+  @GrpcMethod(GrantsService.name)
+  updateBulk(
+    @Meta() meta: Metadata,
+    @Body() { data, filter }: UpdateGrantBulkDto,
+  ): Observable<TotalSerializer> {
+    return this.service
+      .updateBulk(data, filter, { meta })
+      .pipe(map((res) => ({ total: res })));
+  }
+
+  @Cache('grants', 'setter')
+  @GrpcMethod(GrantsService.name)
+  updateById(
+    @Meta() meta: Metadata,
+    @Body() { data, filter }: UpdateGrantUniqueDto,
+  ): Observable<GrantSerializer> {
+    return this.service.updateById(data, filter, { meta });
   }
 }

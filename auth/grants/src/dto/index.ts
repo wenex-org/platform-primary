@@ -5,4 +5,5 @@ export {
   UpdateTimeDto,
   UpdateGrantOneDto,
   UpdateGrantBulkDto,
+  UpdateGrantUniqueDto,
 } from '@app/common/dto';

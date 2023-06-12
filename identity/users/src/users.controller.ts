@@ -5,26 +5,36 @@ import {
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
-import { CountFilterDto, FilterDto, OneFilterDto } from '@app/common/dto';
-import { MetadataBindInterceptor } from '@app/common/interceptors';
+import {
+  CountFilterDto,
+  FilterDto,
+  OneFilterDto,
+  UniqueFilterDto,
+} from '@app/common/dto';
+import {
+  CacheInterceptor,
+  SetMetadataInterceptor,
+} from '@app/common/interceptors';
 import { GrpcMethod, GrpcService } from '@nestjs/microservices';
 import { SentryInterceptor } from '@ntegral/nestjs-sentry';
 import { AllExceptionsFilter } from '@app/common/filters';
-import { CountSerializer } from '@app/common/serializers';
+import { TotalSerializer } from '@app/common/serializers';
 import { Filter, Meta } from '@app/common/decorators';
+import { Observable, Subject, from, map } from 'rxjs';
 import { ValidationPipe } from '@app/common/pipes';
-import { Observable, Subject, from } from 'rxjs';
-import { Metadata } from '@grpc/grpc-js';
+import { Metadata } from '@app/common/interfaces';
 
 import { CreateUserDto, UpdateUserBulkDto, UpdateUserOneDto } from './dto';
 import { UserSerializer, UsersSerializer } from './serializers';
 import { UsersService } from './users.service';
+import { Cache } from '@app/common/metadatas';
 
 @GrpcService()
 @UsePipes(ValidationPipe)
 @UseFilters(AllExceptionsFilter)
 @UseInterceptors(
-  MetadataBindInterceptor,
+  CacheInterceptor,
+  SetMetadataInterceptor,
   ClassSerializerInterceptor,
   new SentryInterceptor({ version: true }),
 )
@@ -32,16 +42,17 @@ export class UsersController {
   constructor(private readonly service: UsersService) {}
 
   @GrpcMethod(UsersService.name)
-  async count(@Filter() filter: CountFilterDto): Promise<CountSerializer> {
-    return CountSerializer.build(await this.service.count(filter));
+  count(@Filter() filter: CountFilterDto): Observable<TotalSerializer> {
+    return this.service.count(filter).pipe(map((res) => ({ total: res })));
   }
 
+  @Cache('users', 'setter')
   @GrpcMethod(UsersService.name)
-  async create(
+  create(
     @Meta() meta: Metadata,
     @Body() data: CreateUserDto,
-  ): Promise<UserSerializer> {
-    return UserSerializer.build(await this.service.create(data, meta));
+  ): Observable<UserSerializer> {
+    return this.service.create(data, { meta });
   }
 
   @GrpcMethod(UsersService.name)
@@ -50,64 +61,68 @@ export class UsersController {
 
     from(this.service.cursor(filter)).subscribe({
       complete: () => subject.complete(),
-      next: (value) => subject.next(UserSerializer.build(value)),
+      next: (value) => subject.next(value),
     });
 
     return subject.asObservable();
   }
 
+  @Cache('users', 'getter')
   @GrpcMethod(UsersService.name)
-  async findOne(@Filter() filter: OneFilterDto): Promise<UserSerializer> {
-    return UserSerializer.build(await this.service.findOne(filter));
+  findOne(@Filter() filter: OneFilterDto): Observable<UserSerializer> {
+    return this.service.findOne(filter);
   }
 
+  @Cache('users', 'getter')
   @GrpcMethod(UsersService.name)
-  async findMany(@Filter() filter: FilterDto): Promise<UsersSerializer> {
-    return UsersSerializer.build(await this.service.findMany(filter));
+  find(@Filter() filter: FilterDto): Observable<UsersSerializer> {
+    return this.service.find(filter).pipe(map((res) => ({ data: res })));
   }
 
+  @Cache('users', 'getter')
   @GrpcMethod(UsersService.name)
-  async findById(@Filter() filter: OneFilterDto): Promise<UserSerializer> {
-    return UserSerializer.build(await this.service.findById(filter));
+  findById(@Filter() filter: UniqueFilterDto): Observable<UserSerializer> {
+    return this.service.findById(filter);
   }
 
+  @Cache('users', 'setter')
   @GrpcMethod(UsersService.name)
-  async deleteById(
+  deleteById(
     @Meta() meta: Metadata,
-    @Filter() filter: OneFilterDto,
-  ): Promise<UserSerializer> {
-    return UserSerializer.build(await this.service.deleteById(filter, meta));
+    @Filter() filter: UniqueFilterDto,
+  ): Observable<UserSerializer> {
+    return this.service.deleteById(filter, { meta });
   }
 
+  @Cache('users', 'setter')
   @GrpcMethod(UsersService.name)
-  async restoreById(
+  restoreById(
     @Meta() meta: Metadata,
-    @Filter() filter: OneFilterDto,
-  ): Promise<UserSerializer> {
-    return UserSerializer.build(await this.service.restoreById(filter, meta));
+    @Filter() filter: UniqueFilterDto,
+  ): Observable<UserSerializer> {
+    return this.service.restoreById(filter, { meta });
+  }
+
+  @Cache('users', 'setter')
+  @GrpcMethod(UsersService.name)
+  destroyById(@Filter() filter: UniqueFilterDto): Observable<UserSerializer> {
+    return this.service.destroyById(filter);
   }
 
   @GrpcMethod(UsersService.name)
-  async destroyById(@Filter() filter: OneFilterDto): Promise<UserSerializer> {
-    return UserSerializer.build(await this.service.destroyById(filter));
-  }
-
-  @GrpcMethod(UsersService.name)
-  async updateById(
+  updateById(
     @Meta() meta: Metadata,
     @Body() { filter, update }: UpdateUserOneDto,
-  ): Promise<UserSerializer> {
-    return UserSerializer.build(
-      await this.service.updateById(filter, update, meta),
-    );
+  ): Observable<UserSerializer> {
+    return this.service.updateById(filter, update, meta);
   }
 
   @GrpcMethod(UsersService.name)
-  async updateBulk(
+  updateBulk(
     @Meta() meta: Metadata,
     @Body() { filter, update }: UpdateUserBulkDto,
-  ): Promise<CountSerializer> {
-    return CountSerializer.build(
+  ): Observable<TotalSerializer> {
+    return TotalSerializer.build(
       await this.service.updateBulk(filter, update, meta),
     );
   }

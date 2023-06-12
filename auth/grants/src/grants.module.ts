@@ -8,13 +8,13 @@ import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { SentryModule } from '@ntegral/nestjs-sentry';
 import { MongooseModule } from '@nestjs/mongoose';
 import { HealthModule } from '@app/health';
+import { RedisModule } from '@app/redis';
 import { Module } from '@nestjs/common';
 
 import { GrantsController } from './grants.controller';
 import { GrantsRepository } from './grants.repository';
 import { GrantsService } from './grants.service';
 import { Grant, GrantSchema } from './schemas';
-import { RedisModule } from '@app/redis';
 
 @Module({
   imports: [

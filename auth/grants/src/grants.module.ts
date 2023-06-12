@@ -1,4 +1,9 @@
-import { MONGO_CONFIG, NODE_ENV, SENTRY_DSN } from '@app/common/configs';
+import {
+  MONGO_CONFIG,
+  NODE_ENV,
+  REDIS_CONFIG,
+  SENTRY_DSN,
+} from '@app/common/configs';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { SentryModule } from '@ntegral/nestjs-sentry';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -9,10 +14,12 @@ import { GrantsController } from './grants.controller';
 import { GrantsRepository } from './grants.repository';
 import { GrantsService } from './grants.service';
 import { Grant, GrantSchema } from './schemas';
+import { RedisModule } from '@app/redis';
 
 @Module({
   imports: [
     PrometheusModule.register(),
+    RedisModule.register(REDIS_CONFIG()),
     MongooseModule.forRoot(MONGO_CONFIG()),
     HealthModule.register(['disk', 'memory', 'mongo']),
     MongooseModule.forFeature([{ name: Grant.name, schema: GrantSchema }]),

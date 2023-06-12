@@ -6,7 +6,7 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import {
-  CountFilterDto,
+  QueryFilterDto,
   FilterDto,
   OneFilterDto,
   UniqueFilterDto,
@@ -42,7 +42,7 @@ export class UsersController {
   constructor(private readonly service: UsersService) {}
 
   @GrpcMethod(UsersService.name)
-  count(@Filter() filter: CountFilterDto): Observable<TotalSerializer> {
+  count(@Filter() filter: QueryFilterDto): Observable<TotalSerializer> {
     return this.service.count(filter).pipe(map((res) => ({ total: res })));
   }
 

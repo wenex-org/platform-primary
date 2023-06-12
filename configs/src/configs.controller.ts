@@ -5,7 +5,7 @@ import {
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
-import { CountFilterDto, FilterDto, OneFilterDto } from '@app/common/dto';
+import { QueryFilterDto, FilterDto, OneFilterDto } from '@app/common/dto';
 import { MetadataBindInterceptor } from '@app/common/interceptors';
 import { GrpcMethod, GrpcService } from '@nestjs/microservices';
 import { SentryInterceptor } from '@ntegral/nestjs-sentry';
@@ -36,7 +36,7 @@ export class ConfigsController {
   constructor(private readonly service: ConfigsService) {}
 
   @GrpcMethod(ConfigsService.name)
-  async count(@Filter() filter: CountFilterDto): Promise<CountSerializer> {
+  async count(@Filter() filter: QueryFilterDto): Promise<CountSerializer> {
     return CountSerializer.build(await this.service.count(filter));
   }
 

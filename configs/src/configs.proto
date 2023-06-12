@@ -2,7 +2,7 @@ syntax = "proto3";
 package configs;
 
 service ConfigsService {
-  rpc Count(CountFilter) returns (Number);
+  rpc Count(QueryFilter) returns (Number);
 
   rpc Create(Config) returns (Config);
 
@@ -34,7 +34,7 @@ message OneFilter {
   optional string projection = 2;
 }
 
-message CountFilter { optional string query = 1; }
+message QueryFilter { optional string query = 1; }
 
 message UpdateConfigOne {
   Config update = 1;
@@ -43,7 +43,7 @@ message UpdateConfigOne {
 
 message UpdateConfigBulk {
   Config update = 1;
-  CountFilter filter = 2;
+  QueryFilter filter = 2;
 }
 
 message Configs { repeated Config items = 1; }

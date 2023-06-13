@@ -10,7 +10,7 @@ import {
 } from '@app/common/interfaces';
 import {
   AUTH_CACHE_TOKEN_KEY,
-  FILTER_PAGINATION_LIMIT_MAX,
+  FILTER_PAGINATION_LIMIT_INTERNAL_MAX,
 } from '@app/common/consts';
 import { BlacklistedService } from '@app/blacklisted';
 import { subjects, toRaw } from '@app/common/utils';
@@ -66,7 +66,9 @@ export class AuthorizationService {
       ...{ field: 1, filter: 1, location: 1, times: 1 },
     };
 
-    const pagination: Pagination = { limit: FILTER_PAGINATION_LIMIT_MAX };
+    const pagination: Pagination = {
+      limit: FILTER_PAGINATION_LIMIT_INTERNAL_MAX,
+    };
 
     const { items } = await lastValueFrom(
       this.provider.grants.find(toRaw({ query, projection, pagination })),

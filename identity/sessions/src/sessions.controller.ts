@@ -66,8 +66,8 @@ export class SessionsController {
   }
 
   @GrpcMethod(SessionsService.name)
-  async findMany(@Filter() filter: FilterDto): Promise<SessionsSerializer> {
-    return SessionsSerializer.build(await this.service.findMany(filter));
+  async find(@Filter() filter: FilterDto): Promise<SessionsSerializer> {
+    return SessionsSerializer.build(await this.service.find(filter));
   }
 
   @GrpcMethod(SessionsService.name)

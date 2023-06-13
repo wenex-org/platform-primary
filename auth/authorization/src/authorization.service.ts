@@ -69,7 +69,7 @@ export class AuthorizationService {
     const pagination: Pagination = { limit: FILTER_PAGINATION_LIMIT_MAX };
 
     const { items } = await lastValueFrom(
-      this.provider.grants.findMany(toRaw({ query, projection, pagination })),
+      this.provider.grants.find(toRaw({ query, projection, pagination })),
     );
 
     const abilities = lookup<Ability[]>(items, { times: 'time' });

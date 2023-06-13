@@ -62,8 +62,8 @@ export class AppsController {
   }
 
   @GrpcMethod(AppsService.name)
-  async findMany(@Filter() filter: FilterDto): Promise<AppsSerializer> {
-    return AppsSerializer.build(await this.service.findMany(filter));
+  async find(@Filter() filter: FilterDto): Promise<AppsSerializer> {
+    return AppsSerializer.build(await this.service.find(filter));
   }
 
   @GrpcMethod(AppsService.name)

@@ -66,8 +66,8 @@ export class ProfilesController {
   }
 
   @GrpcMethod(ProfilesService.name)
-  async findMany(@Filter() filter: FilterDto): Promise<ProfilesSerializer> {
-    return ProfilesSerializer.build(await this.service.findMany(filter));
+  async find(@Filter() filter: FilterDto): Promise<ProfilesSerializer> {
+    return ProfilesSerializer.build(await this.service.find(filter));
   }
 
   @GrpcMethod(ProfilesService.name)

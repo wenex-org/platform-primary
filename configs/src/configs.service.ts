@@ -1,11 +1,11 @@
-import { Service } from '@app/common/core';
+import { ConfigInterface } from '@app/common/interfaces';
 import { Injectable } from '@nestjs/common';
+import { Service } from '@app/common/core';
 
 import { ConfigsRepository } from './configs.repository';
-import { Config } from './schemas';
 
 @Injectable()
-export class ConfigsService extends Service<Config> {
+export class ConfigsService extends Service<ConfigInterface> {
   constructor(readonly repository: ConfigsRepository) {
     super(repository);
   }

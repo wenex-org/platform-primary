@@ -3,4 +3,5 @@ export {
   UpdateConfigDto,
   UpdateConfigOneDto,
   UpdateConfigBulkDto,
+  UpdateConfigUniqueDto,
 } from '@app/common/dto';

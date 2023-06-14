@@ -1,11 +1,11 @@
+import { SessionInterface } from '@app/common/interfaces';
 import { Service } from '@app/common/core';
 import { Injectable } from '@nestjs/common';
 
 import { SessionsRepository } from './sessions.repository';
-import { Session } from './schemas';
 
 @Injectable()
-export class SessionsService extends Service<Session> {
+export class SessionsService extends Service<SessionInterface> {
   constructor(readonly repository: SessionsRepository) {
     super(repository);
   }

@@ -7,4 +7,5 @@ export {
   UpdateOtpServiceDto,
   UpdateClientOneDto,
   UpdateClientBulkDto,
+  UpdateClientUniqueDto,
 } from '@app/common/dto';

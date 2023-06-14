@@ -5,13 +5,14 @@ import {
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
-import { MetadataBindInterceptor } from '@app/common/interceptors';
 import { GrpcMethod, GrpcService } from '@nestjs/microservices';
 import { SentryInterceptor } from '@ntegral/nestjs-sentry';
 import { AllExceptionsFilter } from '@app/common/filters';
 import { ValidationPipe } from '@app/common/pipes';
+import { mapToInstance } from '@app/common/utils';
+import { Metadata } from '@app/common/interfaces';
 import { Meta } from '@app/common/decorators';
-import { Metadata } from '@grpc/grpc-js';
+import { Observable, from } from 'rxjs';
 
 import {
   AuthenticationSerializer,
@@ -25,7 +26,6 @@ import { AuthenticationDto, TokenDto } from './dto';
 @UsePipes(ValidationPipe)
 @UseFilters(AllExceptionsFilter)
 @UseInterceptors(
-  MetadataBindInterceptor,
   ClassSerializerInterceptor,
   new SentryInterceptor({ version: true }),
 )
@@ -33,28 +33,32 @@ export class AuthenticationController {
   constructor(private readonly service: AuthenticationService) {}
 
   @GrpcMethod(AuthenticationService.name)
-  async token(
-    @Meta() metadata: Metadata,
+  token(
+    @Meta() meta: Metadata,
     @Body() data: AuthenticationDto,
-  ): Promise<AuthenticationSerializer> {
-    return AuthenticationSerializer.build(
-      await this.service.token(data, metadata),
+  ): Observable<AuthenticationSerializer> {
+    return from(this.service.token(data, meta)).pipe(
+      mapToInstance(AuthenticationSerializer),
     );
   }
 
   @GrpcMethod(AuthenticationService.name)
-  async decrypt(
+  decrypt(
     @Meta() meta: Metadata,
     @Body() token: TokenDto,
-  ): Promise<JwtTokenSerializer> {
-    return JwtTokenSerializer.build(await this.service.decrypt(token, meta));
+  ): Observable<JwtTokenSerializer> {
+    return from(this.service.decrypt(token, meta)).pipe(
+      mapToInstance(JwtTokenSerializer),
+    );
   }
 
   @GrpcMethod(AuthenticationService.name)
-  async logout(
+  logout(
     @Meta() meta: Metadata,
     @Body() token: TokenDto,
-  ): Promise<ResultSerializer> {
-    return ResultSerializer.build(await this.service.logout(token, meta));
+  ): Observable<ResultSerializer> {
+    return from(this.service.logout(token, meta)).pipe(
+      mapToInstance(ResultSerializer, 'result'),
+    );
   }
 }

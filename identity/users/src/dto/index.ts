@@ -3,4 +3,5 @@ export {
   UpdateUserDto,
   UpdateUserOneDto,
   UpdateUserBulkDto,
+  UpdateUserUniqueDto,
 } from '@app/common/dto';

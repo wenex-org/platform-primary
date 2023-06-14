@@ -5,16 +5,24 @@ import {
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
-import { QueryFilterDto, FilterDto, OneFilterDto } from '@app/common/dto';
-import { MetadataBindInterceptor } from '@app/common/interceptors';
+import {
+  QueryFilterDto,
+  FilterDto,
+  OneFilterDto,
+  UniqueFilterDto,
+  UpdateProfileUniqueDto,
+} from '@app/common/dto';
+import { ProfileInterface, Metadata } from '@app/common/interfaces';
 import { GrpcMethod, GrpcService } from '@nestjs/microservices';
+import { mapToInstance, toInstance } from '@app/common/utils';
+import { CacheInterceptor } from '@app/common/interceptors';
 import { SentryInterceptor } from '@ntegral/nestjs-sentry';
 import { AllExceptionsFilter } from '@app/common/filters';
 import { TotalSerializer } from '@app/common/serializers';
 import { Filter, Meta } from '@app/common/decorators';
 import { ValidationPipe } from '@app/common/pipes';
 import { Observable, Subject, from } from 'rxjs';
-import { Metadata } from '@grpc/grpc-js';
+import { Cache } from '@app/common/metadatas';
 
 import {
   CreateProfileDto,
@@ -28,95 +36,156 @@ import { ProfilesService } from './profiles.service';
 @UsePipes(ValidationPipe)
 @UseFilters(AllExceptionsFilter)
 @UseInterceptors(
-  MetadataBindInterceptor,
+  CacheInterceptor,
   ClassSerializerInterceptor,
   new SentryInterceptor({ version: true }),
 )
 export class ProfilesController {
   constructor(private readonly service: ProfilesService) {}
 
+  @Cache('profiles', 'fill')
   @GrpcMethod(ProfilesService.name)
-  async count(@Filter() filter: QueryFilterDto): Promise<TotalSerializer> {
-    return TotalSerializer.build(await this.service.count(filter));
+  count(@Filter() filter: QueryFilterDto): Observable<TotalSerializer> {
+    return this.service
+      .count(filter)
+      .pipe(mapToInstance(TotalSerializer, 'total'));
   }
 
+  @Cache('profiles', 'flush')
   @GrpcMethod(ProfilesService.name)
-  async create(
+  create(
     @Meta() meta: Metadata,
     @Body() data: CreateProfileDto,
-  ): Promise<ProfileSerializer> {
-    return ProfileSerializer.build(await this.service.create(data, meta));
+  ): Observable<ProfileSerializer> {
+    return this.service
+      .create(data, meta)
+      .pipe(mapToInstance(ProfileSerializer));
+  }
+
+  @Cache('profiles', 'fill')
+  @GrpcMethod(ProfilesService.name)
+  find(@Filter() filter: FilterDto): Observable<ProfilesSerializer> {
+    return this.service
+      .find(filter)
+      .pipe(mapToInstance(ProfilesSerializer, 'array'));
   }
 
   @GrpcMethod(ProfilesService.name)
   cursor(@Filter() filter: FilterDto): Observable<ProfileSerializer> {
-    const subject = new Subject<ProfileSerializer>();
+    const subject = new Subject<ProfileInterface>();
 
     from(this.service.cursor(filter)).subscribe({
       complete: () => subject.complete(),
-      next: (value) => subject.next(ProfileSerializer.build(value)),
+      next: (value) => subject.next(toInstance(ProfileSerializer, value)),
     });
 
     return subject.asObservable();
   }
 
+  @Cache('profiles', 'fill')
   @GrpcMethod(ProfilesService.name)
-  async findOne(@Filter() filter: OneFilterDto): Promise<ProfileSerializer> {
-    return ProfileSerializer.build(await this.service.findOne(filter));
+  findOne(@Filter() filter: OneFilterDto): Observable<ProfileSerializer> {
+    return this.service.findOne(filter).pipe(mapToInstance(ProfileSerializer));
   }
 
+  @Cache('profiles', 'fill')
   @GrpcMethod(ProfilesService.name)
-  async find(@Filter() filter: FilterDto): Promise<ProfilesSerializer> {
-    return ProfilesSerializer.build(await this.service.find(filter));
+  findById(@Filter() filter: UniqueFilterDto): Observable<ProfileSerializer> {
+    return this.service.findById(filter).pipe(mapToInstance(ProfileSerializer));
   }
 
+  @Cache('profiles', 'flush')
   @GrpcMethod(ProfilesService.name)
-  async findById(@Filter() filter: OneFilterDto): Promise<ProfileSerializer> {
-    return ProfileSerializer.build(await this.service.findById(filter));
-  }
-
-  @GrpcMethod(ProfilesService.name)
-  async deleteById(
+  deleteOne(
     @Meta() meta: Metadata,
     @Filter() filter: OneFilterDto,
-  ): Promise<ProfileSerializer> {
-    return ProfileSerializer.build(await this.service.deleteById(filter, meta));
+  ): Observable<ProfileSerializer> {
+    return this.service
+      .deleteOne(filter, { meta })
+      .pipe(mapToInstance(ProfileSerializer));
   }
 
+  @Cache('profiles', 'flush')
   @GrpcMethod(ProfilesService.name)
-  async restoreById(
+  deleteById(
+    @Meta() meta: Metadata,
+    @Filter() filter: UniqueFilterDto,
+  ): Observable<ProfileSerializer> {
+    return this.service
+      .deleteById(filter, { meta })
+      .pipe(mapToInstance(ProfileSerializer));
+  }
+
+  @Cache('profiles', 'flush')
+  @GrpcMethod(ProfilesService.name)
+  restoreOne(
     @Meta() meta: Metadata,
     @Filter() filter: OneFilterDto,
-  ): Promise<ProfileSerializer> {
-    return ProfileSerializer.build(
-      await this.service.restoreById(filter, meta),
-    );
+  ): Observable<ProfileSerializer> {
+    return this.service
+      .restoreOne(filter, { meta })
+      .pipe(mapToInstance(ProfileSerializer));
   }
 
+  @Cache('profiles', 'flush')
   @GrpcMethod(ProfilesService.name)
-  async destroyById(
-    @Filter() filter: OneFilterDto,
-  ): Promise<ProfileSerializer> {
-    return ProfileSerializer.build(await this.service.destroyById(filter));
-  }
-
-  @GrpcMethod(ProfilesService.name)
-  async updateById(
+  restoreById(
     @Meta() meta: Metadata,
-    @Body() { filter, update }: UpdateProfileOneDto,
-  ): Promise<ProfileSerializer> {
-    return ProfileSerializer.build(
-      await this.service.updateById(filter, update, meta),
-    );
+    @Filter() filter: UniqueFilterDto,
+  ): Observable<ProfileSerializer> {
+    return this.service
+      .restoreById(filter, { meta })
+      .pipe(mapToInstance(ProfileSerializer));
   }
 
+  @Cache('profiles', 'flush')
   @GrpcMethod(ProfilesService.name)
-  async updateBulk(
+  destroyOne(@Filter() filter: OneFilterDto): Observable<ProfileSerializer> {
+    return this.service
+      .destroyOne(filter)
+      .pipe(mapToInstance(ProfileSerializer));
+  }
+
+  @Cache('profiles', 'flush')
+  @GrpcMethod(ProfilesService.name)
+  destroyById(
+    @Filter() filter: UniqueFilterDto,
+  ): Observable<ProfileSerializer> {
+    return this.service
+      .destroyById(filter)
+      .pipe(mapToInstance(ProfileSerializer));
+  }
+
+  @Cache('profiles', 'flush')
+  @GrpcMethod(ProfilesService.name)
+  updateOne(
     @Meta() meta: Metadata,
-    @Body() { filter, update }: UpdateProfileBulkDto,
-  ): Promise<TotalSerializer> {
-    return TotalSerializer.build(
-      await this.service.updateBulk(filter, update, meta),
-    );
+    @Body() { data, filter }: UpdateProfileOneDto,
+  ): Observable<ProfileSerializer> {
+    return this.service
+      .updateOne(data, filter, { meta })
+      .pipe(mapToInstance(ProfileSerializer));
+  }
+
+  @Cache('profiles', 'flush')
+  @GrpcMethod(ProfilesService.name)
+  updateBulk(
+    @Meta() meta: Metadata,
+    @Body() { data, filter }: UpdateProfileBulkDto,
+  ): Observable<TotalSerializer> {
+    return this.service
+      .updateBulk(data, filter, { meta })
+      .pipe(mapToInstance(TotalSerializer, 'total'));
+  }
+
+  @Cache('profiles', 'flush')
+  @GrpcMethod(ProfilesService.name)
+  updateById(
+    @Meta() meta: Metadata,
+    @Body() { data, filter }: UpdateProfileUniqueDto,
+  ): Observable<ProfileSerializer> {
+    return this.service
+      .updateById(data, filter, { meta })
+      .pipe(mapToInstance(ProfileSerializer));
   }
 }

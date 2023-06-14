@@ -3,4 +3,5 @@ export {
   UpdateSessionDto,
   UpdateSessionOneDto,
   UpdateSessionBulkDto,
+  UpdateSessionUniqueDto,
 } from '@app/common/dto';

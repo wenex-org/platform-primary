@@ -2,7 +2,7 @@ import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import {
   JWT_SECRET,
   NODE_ENV,
-  REDIS_OPTIONS,
+  REDIS_CONFIG,
   SENTRY_DSN,
 } from '@app/common/configs';
 import { ClientsModule } from '@nestjs/microservices';
@@ -22,7 +22,7 @@ import { clientsModuleOptions } from './authentication.const';
   imports: [
     BlacklistedModule,
     PrometheusModule.register(),
-    RedisModule.register(REDIS_OPTIONS()),
+    RedisModule.register(REDIS_CONFIG()),
     HealthModule.register(['disk', 'memory']),
     JwtModule.register({ secret: JWT_SECRET() }),
     ClientsModule.register(clientsModuleOptions),

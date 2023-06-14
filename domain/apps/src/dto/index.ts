@@ -5,4 +5,5 @@ export {
   UpdateChangeLogDto,
   UpdateAppOneDto,
   UpdateAppBulkDto,
+  UpdateAppUniqueDto,
 } from '@app/common/dto';

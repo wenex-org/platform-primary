@@ -5,4 +5,5 @@ export {
   UpdatePlaceDto,
   UpdateProfileOneDto,
   UpdateProfileBulkDto,
+  UpdateProfileUniqueDto,
 } from '@app/common/dto';

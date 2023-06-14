@@ -1,8 +1,14 @@
-import { MONGO_CONFIG, NODE_ENV, SENTRY_DSN } from '@app/common/configs';
+import {
+  MONGO_CONFIG,
+  NODE_ENV,
+  REDIS_CONFIG,
+  SENTRY_DSN,
+} from '@app/common/configs';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { SentryModule } from '@ntegral/nestjs-sentry';
 import { MongooseModule } from '@nestjs/mongoose';
 import { HealthModule } from '@app/health';
+import { RedisModule } from '@app/redis';
 import { Module } from '@nestjs/common';
 
 import { ConfigsController } from './configs.controller';
@@ -13,6 +19,7 @@ import { Config, ConfigSchema } from './schemas';
 @Module({
   imports: [
     PrometheusModule.register(),
+    RedisModule.register(REDIS_CONFIG()),
     MongooseModule.forRoot(MONGO_CONFIG()),
     HealthModule.register(['disk', 'memory', 'mongo']),
     MongooseModule.forFeature([{ name: Config.name, schema: ConfigSchema }]),

@@ -5,16 +5,24 @@ import {
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
-import { QueryFilterDto, FilterDto, OneFilterDto } from '@app/common/dto';
-import { MetadataBindInterceptor } from '@app/common/interceptors';
+import {
+  QueryFilterDto,
+  FilterDto,
+  OneFilterDto,
+  UniqueFilterDto,
+  UpdateAppUniqueDto,
+} from '@app/common/dto';
+import { AppInterface, Metadata } from '@app/common/interfaces';
 import { GrpcMethod, GrpcService } from '@nestjs/microservices';
+import { mapToInstance, toInstance } from '@app/common/utils';
+import { CacheInterceptor } from '@app/common/interceptors';
 import { SentryInterceptor } from '@ntegral/nestjs-sentry';
 import { AllExceptionsFilter } from '@app/common/filters';
 import { TotalSerializer } from '@app/common/serializers';
 import { Filter, Meta } from '@app/common/decorators';
 import { ValidationPipe } from '@app/common/pipes';
 import { Observable, Subject, from } from 'rxjs';
-import { Metadata } from '@grpc/grpc-js';
+import { Cache } from '@app/common/metadatas';
 
 import { CreateAppDto, UpdateAppBulkDto, UpdateAppOneDto } from './dto';
 import { AppSerializer, AppsSerializer } from './serializers';
@@ -24,91 +32,148 @@ import { AppsService } from './apps.service';
 @UsePipes(ValidationPipe)
 @UseFilters(AllExceptionsFilter)
 @UseInterceptors(
-  MetadataBindInterceptor,
+  CacheInterceptor,
   ClassSerializerInterceptor,
   new SentryInterceptor({ version: true }),
 )
 export class AppsController {
   constructor(private readonly service: AppsService) {}
 
+  @Cache('apps', 'fill')
   @GrpcMethod(AppsService.name)
-  async count(@Filter() filter: QueryFilterDto): Promise<TotalSerializer> {
-    return TotalSerializer.build(await this.service.count(filter));
+  count(@Filter() filter: QueryFilterDto): Observable<TotalSerializer> {
+    return this.service
+      .count(filter)
+      .pipe(mapToInstance(TotalSerializer, 'total'));
   }
 
+  @Cache('apps', 'flush')
   @GrpcMethod(AppsService.name)
-  async create(
+  create(
     @Meta() meta: Metadata,
     @Body() data: CreateAppDto,
-  ): Promise<AppSerializer> {
-    return AppSerializer.build(await this.service.create(data, meta));
+  ): Observable<AppSerializer> {
+    return this.service.create(data, meta).pipe(mapToInstance(AppSerializer));
+  }
+
+  @Cache('apps', 'fill')
+  @GrpcMethod(AppsService.name)
+  find(@Filter() filter: FilterDto): Observable<AppsSerializer> {
+    return this.service
+      .find(filter)
+      .pipe(mapToInstance(AppsSerializer, 'array'));
   }
 
   @GrpcMethod(AppsService.name)
   cursor(@Filter() filter: FilterDto): Observable<AppSerializer> {
-    const subject = new Subject<AppSerializer>();
+    const subject = new Subject<AppInterface>();
 
     from(this.service.cursor(filter)).subscribe({
       complete: () => subject.complete(),
-      next: (value) => subject.next(AppSerializer.build(value)),
+      next: (value) => subject.next(toInstance(AppSerializer, value)),
     });
 
     return subject.asObservable();
   }
 
+  @Cache('apps', 'fill')
   @GrpcMethod(AppsService.name)
-  async findOne(@Filter() filter: OneFilterDto): Promise<AppSerializer> {
-    return AppSerializer.build(await this.service.findOne(filter));
+  findOne(@Filter() filter: OneFilterDto): Observable<AppSerializer> {
+    return this.service.findOne(filter).pipe(mapToInstance(AppSerializer));
   }
 
+  @Cache('apps', 'fill')
   @GrpcMethod(AppsService.name)
-  async find(@Filter() filter: FilterDto): Promise<AppsSerializer> {
-    return AppsSerializer.build(await this.service.find(filter));
+  findById(@Filter() filter: UniqueFilterDto): Observable<AppSerializer> {
+    return this.service.findById(filter).pipe(mapToInstance(AppSerializer));
   }
 
+  @Cache('apps', 'flush')
   @GrpcMethod(AppsService.name)
-  async findById(@Filter() filter: OneFilterDto): Promise<AppSerializer> {
-    return AppSerializer.build(await this.service.findById(filter));
-  }
-
-  @GrpcMethod(AppsService.name)
-  async deleteById(
+  deleteOne(
     @Meta() meta: Metadata,
     @Filter() filter: OneFilterDto,
-  ): Promise<AppSerializer> {
-    return AppSerializer.build(await this.service.deleteById(filter, meta));
+  ): Observable<AppSerializer> {
+    return this.service
+      .deleteOne(filter, { meta })
+      .pipe(mapToInstance(AppSerializer));
   }
 
+  @Cache('apps', 'flush')
   @GrpcMethod(AppsService.name)
-  async restoreById(
+  deleteById(
+    @Meta() meta: Metadata,
+    @Filter() filter: UniqueFilterDto,
+  ): Observable<AppSerializer> {
+    return this.service
+      .deleteById(filter, { meta })
+      .pipe(mapToInstance(AppSerializer));
+  }
+
+  @Cache('apps', 'flush')
+  @GrpcMethod(AppsService.name)
+  restoreOne(
     @Meta() meta: Metadata,
     @Filter() filter: OneFilterDto,
-  ): Promise<AppSerializer> {
-    return AppSerializer.build(await this.service.restoreById(filter, meta));
+  ): Observable<AppSerializer> {
+    return this.service
+      .restoreOne(filter, { meta })
+      .pipe(mapToInstance(AppSerializer));
   }
 
+  @Cache('apps', 'flush')
   @GrpcMethod(AppsService.name)
-  async destroyById(@Filter() filter: OneFilterDto): Promise<AppSerializer> {
-    return AppSerializer.build(await this.service.destroyById(filter));
-  }
-
-  @GrpcMethod(AppsService.name)
-  async updateById(
+  restoreById(
     @Meta() meta: Metadata,
-    @Body() { filter, update }: UpdateAppOneDto,
-  ): Promise<AppSerializer> {
-    return AppSerializer.build(
-      await this.service.updateById(filter, update, meta),
-    );
+    @Filter() filter: UniqueFilterDto,
+  ): Observable<AppSerializer> {
+    return this.service
+      .restoreById(filter, { meta })
+      .pipe(mapToInstance(AppSerializer));
   }
 
+  @Cache('apps', 'flush')
   @GrpcMethod(AppsService.name)
-  async updateBulk(
+  destroyOne(@Filter() filter: OneFilterDto): Observable<AppSerializer> {
+    return this.service.destroyOne(filter).pipe(mapToInstance(AppSerializer));
+  }
+
+  @Cache('apps', 'flush')
+  @GrpcMethod(AppsService.name)
+  destroyById(@Filter() filter: UniqueFilterDto): Observable<AppSerializer> {
+    return this.service.destroyById(filter).pipe(mapToInstance(AppSerializer));
+  }
+
+  @Cache('apps', 'flush')
+  @GrpcMethod(AppsService.name)
+  updateOne(
     @Meta() meta: Metadata,
-    @Body() { filter, update }: UpdateAppBulkDto,
-  ): Promise<TotalSerializer> {
-    return TotalSerializer.build(
-      await this.service.updateBulk(filter, update, meta),
-    );
+    @Body() { data, filter }: UpdateAppOneDto,
+  ): Observable<AppSerializer> {
+    return this.service
+      .updateOne(data, filter, { meta })
+      .pipe(mapToInstance(AppSerializer));
+  }
+
+  @Cache('apps', 'flush')
+  @GrpcMethod(AppsService.name)
+  updateBulk(
+    @Meta() meta: Metadata,
+    @Body() { data, filter }: UpdateAppBulkDto,
+  ): Observable<TotalSerializer> {
+    return this.service
+      .updateBulk(data, filter, { meta })
+      .pipe(mapToInstance(TotalSerializer, 'total'));
+  }
+
+  @Cache('apps', 'flush')
+  @GrpcMethod(AppsService.name)
+  updateById(
+    @Meta() meta: Metadata,
+    @Body() { data, filter }: UpdateAppUniqueDto,
+  ): Observable<AppSerializer> {
+    return this.service
+      .updateById(data, filter, { meta })
+      .pipe(mapToInstance(AppSerializer));
   }
 }

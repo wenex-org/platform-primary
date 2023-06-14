@@ -1,11 +1,11 @@
-import { Service } from '@app/common/core';
+import { UserInterface } from '@app/common/interfaces';
 import { Injectable } from '@nestjs/common';
+import { Service } from '@app/common/core';
 
 import { UsersRepository } from './users.repository';
-import { User } from './schemas';
 
 @Injectable()
-export class UsersService extends Service<User> {
+export class UsersService extends Service<UserInterface> {
   constructor(readonly repository: UsersRepository) {
     super(repository);
   }

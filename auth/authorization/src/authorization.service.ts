@@ -1,10 +1,10 @@
 import {
-  Ability,
   AuthorizationRequest,
   AuthorizationResponse,
   Grant,
   JwtToken,
   Pagination,
+  Policy,
   Projection,
   Query,
 } from '@app/common/interfaces';
@@ -14,13 +14,12 @@ import {
 } from '@app/common/consts';
 import { BlacklistedService } from '@app/blacklisted';
 import { subjects, toRaw } from '@app/common/utils';
-import { lookup } from 'naming-conventions-modeler';
+import AccessControl, { Permission } from 'abacl';
 import { Injectable } from '@nestjs/common';
 import { AES } from '@app/common/helpers';
 import { JwtService } from '@nestjs/jwt';
 import { Metadata } from '@grpc/grpc-js';
 import { lastValueFrom } from 'rxjs';
-import AccessControl from 'abacl';
 
 import { AuthorizationProvider } from './authorization.provider';
 
@@ -40,10 +39,8 @@ export class AuthorizationService {
     if (!auth.ip && meta) auth.ip = String(meta.get('x-user-ip'));
     if (!auth.token && meta) auth.token = String(meta.get('authorization'));
 
-    if (typeof auth.token === 'string')
-      auth.token = this.jwtService.verify<JwtToken>(AES.decrypt(auth.token));
-
-    const { action, object, token, ip, strict } = auth;
+    const { action, object, ip, strict } = auth;
+    const token = this.jwtService.verify<JwtToken>(AES.decrypt(auth.token));
 
     const isBlacklisted = await this.blacklisted.isBlacklisted(
       AUTH_CACHE_TOKEN_KEY,
@@ -70,18 +67,19 @@ export class AuthorizationService {
       limit: FILTER_PAGINATION_LIMIT_INTERNAL_MAX,
     };
 
-    const { items } = await lastValueFrom(
+    const { data } = await lastValueFrom(
       this.provider.grants.find(toRaw({ query, projection, pagination })),
     );
 
-    const abilities = lookup<Ability[]>(items, { times: 'time' });
+    const ac = new AccessControl(data, { strict });
 
-    const ac = new AccessControl(abilities, { strict });
+    const callable = (perm: Permission) =>
+      ip ? perm.location(ip) && perm.time() : perm.time();
+    const permission = ac.can(subject, action, object, { callable });
 
-    const permission = ac.can(subject, action, object, (perm) => {
-      return ip ? perm.location(ip) && perm.time() : perm.time();
-    });
-
-    return { granted: permission.granted, abilities: permission.abilities() };
+    return {
+      granted: permission.granted,
+      policies: permission.policies as Policy[],
+    };
   }
 }

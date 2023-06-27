@@ -5,7 +5,6 @@ import {
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
-import { SetMetadataInterceptor } from '@app/common/interceptors';
 import { GrpcMethod, GrpcService } from '@nestjs/microservices';
 import { SentryInterceptor } from '@ntegral/nestjs-sentry';
 import { AllExceptionsFilter } from '@app/common/filters';
@@ -23,7 +22,6 @@ import { AuthorizationDto } from './dto';
 @UsePipes(ValidationPipe)
 @UseFilters(AllExceptionsFilter)
 @UseInterceptors(
-  SetMetadataInterceptor,
   ClassSerializerInterceptor,
   new SentryInterceptor({ version: true }),
 )

@@ -1,4 +1,5 @@
 import {
+  JWT_SECRET,
   MONGO_CONFIG,
   NODE_ENV,
   REDIS_CONFIG,
@@ -9,6 +10,7 @@ import { SentryModule } from '@ntegral/nestjs-sentry';
 import { MongooseModule } from '@nestjs/mongoose';
 import { HealthModule } from '@app/health';
 import { RedisModule } from '@app/redis';
+import { JwtModule } from '@nestjs/jwt';
 import { Module } from '@nestjs/common';
 
 import { ClientsController } from './clients.controller';
@@ -21,6 +23,7 @@ import { Client, ClientSchema } from './schemas';
     PrometheusModule.register(),
     RedisModule.register(REDIS_CONFIG()),
     MongooseModule.forRoot(MONGO_CONFIG()),
+    JwtModule.register({ secret: JWT_SECRET() }),
     HealthModule.register(['disk', 'memory', 'mongo']),
     MongooseModule.forFeature([{ name: Client.name, schema: ClientSchema }]),
     SentryModule.forRoot({
